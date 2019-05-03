@@ -291,6 +291,11 @@ void func_comando_info(int iParametro, char* sParametro, float fParametro)//"inf
       //FlashMode_t ESP.getFlashChipMode());
   Serial.printf("FlashChipSizeByChipId: %i\n",ESP.getFlashChipSizeByChipId());  
   Serial.printf("-----------------------------------------------\n");
+
+  Serial.printf("\n-----------------Config info-----------------\n");
+  Serial.printf("anchoLoop: %i\n",anchoLoop);
+  Serial.printf("ahorroEnergia: %i\n",ahorroEnergia);
+  Serial.printf("-----------------------------------------------\n");
   }  
 
 void func_comando_fexist(int iParametro, char* sParametro, float fParametro)//"fexist")

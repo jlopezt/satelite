@@ -11,13 +11,13 @@
 
 //Defines generales
 #define NOMBRE_FAMILIA "Termometro_Satelite"
-#define VERSION "1.5.2 (ESP8266v2.4.2 OTA|json|MQTT)"
+#define VERSION "1.6.0 (ESP8266v2.4.2 OTA|json|MQTT)"
 #define PUERTO_WEBSERVER 80
 #define MAX_SATELITES 16 //numero maximo de satelites de 0 a 15 controlado por los DIP Switch
 #define POLLING_TIME_OUT 60000 //Milisegundos transcurridos entre dos peticiones del copntrolador antes de intentar registrarse
 
-#define SEPARADOR '|'
-#define SUBSEPARADOR '#'
+#define SEPARADOR        '|'
+#define SUBSEPARADOR     '#'
 #define KO               -1
 #define OK                0
 #define MAX_VUELTAS  UINT16_MAX// 32767 
@@ -36,6 +36,7 @@
 #define PIN_DESBORDE_TIEMPO D5
 
 // Una vuela de loop son ANCHO_INTERVALO segundos 
+#define MULTIPLICADOR_ANCHO_INTERVALO 5 //Multiplica el anchoi del intervalo para mejorar el ahorro de energia
 #define ANCHO_INTERVALO             100 //Ancho en milisegundos de la rodaja de tiempo
 #define FRECUENCIA_OTA                5 //cada cuantas vueltas de loop atiende las acciones
 #define FRECUENCIA_LEE_SENSORES      50 //cada cuantas vueltas de loop lee los sensores
@@ -65,6 +66,8 @@ unsigned long ultimaLectura=0; //El contador de millins() hace overflow cada 50 
 String nombre_dispoisitivo(NOMBRE_FAMILIA);//Nombre del dispositivo, por defecto el de la familia
 uint16_t vuelta = MAX_VUELTAS-100;//0; //vueltas de loop
 int debugGlobal=0; //por defecto desabilitado
+int8_t ahorroEnergia=0;//inicialmente desactivado el ahorro de energia
+int8_t anchoLoop= ANCHO_INTERVALO;//inicialmente desactivado el ahorro de energia
 
 void setup()
   {
@@ -131,7 +134,7 @@ void  loop()
   if ((vuelta % FRECUENCIA_LEE_SENSORES)==0) leeSensores(debugGlobal); //lee los sensores de distancia
   //Prioridad 3: Interfaces externos de consulta  
   if ((vuelta % FRECUENCIA_SERVIDOR_WEB)==0) webServer(debugGlobal); //atiende el servidor web
-  if ((vuelta % FRECUENCIA_MQTT)==0) atiendeMQTT(true);//debugGlobal);
+  if ((vuelta % FRECUENCIA_MQTT)==0) atiendeMQTT(debugGlobal);
   if ((vuelta % FRECUENCIA_ORDENES)==0) while(HayOrdenes(debugGlobal)) EjecutaOrdenes(debugGlobal); //Lee ordenes via serie
   if ((vuelta % FRECUENCIA_WIFI_WATCHDOG)==0) WifiWD();
   //------------- FIN EJECUCION DE TAREAS ---------------------------------  
@@ -141,10 +144,11 @@ void  loop()
   //if (vuelta>=MAX_VUELTAS) vuelta=0;  
     
   //Espero hasta el final de la rodaja de tiempo
-  while(millis()<EntradaBucle+ANCHO_INTERVALO)
+  while(millis()<EntradaBucle+anchoLoop)//ANCHO_INTERVALO)
     {
     if(millis()<EntradaBucle) break; //cada 49 dias el contador de millis desborda
-    delayMicroseconds(1000);
+    //delayMicroseconds(1000);
+    delay(1);
     }
   }
 
@@ -159,11 +163,17 @@ boolean inicializaConfiguracion(boolean debug)
   if (debug) Serial.println("Recupero configuracion de archivo...");
 
   //cargo el valores por defecto
+  ahorroEnergia=0; //ahorro de energia desactivado por defecto
   IPControlador.fromString("0.0.0.0");
   for(int8_t id=0;id<MAX_SATELITES;id++) IPSatelites[id].fromString("0.0.0.0");  
     
   if(leeFichero(GLOBAL_CONFIG_FILE, cad)) parseaConfiguracionGlobal(cad);
 
+  //Ajusto el ancho del intervalo segun el modo de ahorro de energia
+  //anchoLoop=(ahorroEnergia==0?ANCHO_INTERVALO:MULTIPLICADOR_ANCHO_INTERVALO*ANCHO_INTERVALO);
+  if(ahorroEnergia==0) anchoLoop=ANCHO_INTERVALO;
+  else anchoLoop=MULTIPLICADOR_ANCHO_INTERVALO*ANCHO_INTERVALO;
+  
   return true;
   }
 
@@ -180,6 +190,7 @@ boolean parseaConfiguracionGlobal(String contenido)
     {
     Serial.println("parsed json");
 //******************************Parte especifica del json a leer********************************
+    ahorroEnergia=atoi(json["ahorroEnergia"]);
     direccion = atoi(json["id"]); // "5"
     IPControlador.fromString((const char *)json["IPControlador"]);
     IPSatelites[0].fromString((const char *)json["IPPrimerTermometro"]);
@@ -189,7 +200,7 @@ boolean parseaConfiguracionGlobal(String contenido)
       IPSatelites[id]=IPSatelites[id-1];//copio la anterior
       IPSatelites[id][3]++;//paso a la siguiente
       }            
-    Serial.printf("Configuracion leida:\ndireccion: %i\nIP controlador: %s\nIP primer satelite: %s\nIP Gateway: %s\n",direccion,IPControlador.toString().c_str(),IPSatelites[0].toString().c_str(),IPGateway.toString().c_str());
+    Serial.printf("Configuracion leida:\ndireccion: %i\nIP controlador: %s\nIP primer satelite: %s\nIP Gateway: %s\nAhorro de energia: %i\n",direccion,IPControlador.toString().c_str(),IPSatelites[0].toString().c_str(),IPGateway.toString().c_str(), ahorroEnergia);
 //************************************************************************************************
     }
   }

@@ -77,9 +77,8 @@ boolean recuperaDatosWiFi(boolean debug)
   //cargo el valores por defecto
   ////////No aplican en este caso
     
-  if(leeFichero(WIFI_CONFIG_FILE, cad)) parseaConfiguracionWifi(cad);
-
-  return true;
+  if(leeFichero(WIFI_CONFIG_FILE, cad)) return(parseaConfiguracionWifi(cad));
+  else return false;
   }
 
 /*********************************************/
@@ -123,6 +122,11 @@ boolean inicializaWifi(boolean debug)
 
     //Activo el modo de autoreconexion nuevo en version 1.5 (con el cambio a esp8266 2.4.2)
     WiFi.setAutoReconnect(true);
+    
+    //Modo ahorro energia
+    WiFi.mode(WIFI_STA);//Solo funciona el light_sleep en este modo
+    if(ahorroEnergia==1) wifi_set_sleep_type(LIGHT_SLEEP_T); //activado el ahorro de energia
+    //else wifi_set_sleep_type(NONE_SLEEP_T); //desactivado el ahorro de energia OJO SE QUEDA EN SUSPENSION TAMBIEN
 
     Serial.println("Conectando multibase");
     if (conectaMultibase(debug)) 

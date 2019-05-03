@@ -51,7 +51,7 @@ void handleMedidas()
 
   server.send(200, "text/plain", cad);  
    
-  Serial.println("Medidas requeridas ok");
+  //Serial.println("Medidas requeridas ok");
   
   registraPolling();//Apunto la hora del ultimo polling
   }
@@ -81,7 +81,7 @@ void handleMedida()
   
   server.send(200, "application/json", cad);   
    
-  Serial.println("Medidas requeridas ok");
+  //Serial.println("Medidas requeridas ok");
     
   registraPolling();//Apunto la hora del ultimo polling
   }

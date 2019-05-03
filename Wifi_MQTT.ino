@@ -100,19 +100,19 @@ boolean conectaMQTT(void)
   
   while (!clienteMQTT.connected()) 
     {    
-    Serial.println("No conectado, intentando conectar.");
+    if(debugGlobal) Serial.println("No conectado, intentando conectar.");
   
     // Attempt to connect
     //boolean connect (clientID, willTopic, willQoS, willRetain, willMessage)
     if (clienteMQTT.connect(ID_MQTT.c_str(),String(WILL_TOPIC).c_str(),WILL_QOS,WILL_RETAIN,String(WILL_MSG).c_str()))
       {
-      Serial.println("conectado");
+      if(debugGlobal) Serial.println("conectado");
       return(true);
       }
 
     if(intentos++>3) return (false);
     
-    Serial.println("Error al conectar al broker...");
+    if(debugGlobal) Serial.println("Error al conectar al broker...");
     delay(500);      
     }
   }
