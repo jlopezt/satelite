@@ -125,7 +125,7 @@ boolean inicializaWifi(boolean debug)
     
     //Modo ahorro energia
     WiFi.mode(WIFI_STA);//Solo funciona el light_sleep en este modo
-    if(ahorroEnergia==1) wifi_set_sleep_type(LIGHT_SLEEP_T); //activado el ahorro de energia
+    //if(ahorroEnergia==1) wifi_set_sleep_type(LIGHT_SLEEP_T); //activado el ahorro de energia
     //else wifi_set_sleep_type(NONE_SLEEP_T); //desactivado el ahorro de energia OJO SE QUEDA EN SUSPENSION TAMBIEN
 
     Serial.println("Conectando multibase");
@@ -223,11 +223,20 @@ boolean conectaMultibase(boolean debug)
     
   return TRUE; //se ha conectado y sale con OK
   }
+/**********************************************************************/
+/*            Devuelve la IP configurada en el dispositivo            */
+/**********************************************************************/ 
+String getIP(int debug) { return WiFi.localIP().toString();}
 
-String getIP(int debug)
-  {  
-  return WiFi.localIP().toString();
-  }
+/*********************************************************************/
+/*       Devuelve el nombre de la red a la que se ha conectado       */
+/*********************************************************************/ 
+String nombreSSID(void) {return WiFi.SSID();}  
+
+/*********************************************************************/
+/*             Watchdog de control para la conexion WiFi             */
+/*********************************************************************/ 
+void WifiWD(void) {if(WiFi.status() != WL_CONNECTED) ESP.restart();}
 
 /**********************************************************************/
 /* Salva la configuracion de las bases wifi conectada en formato json */
@@ -279,11 +288,4 @@ String generaJsonConfiguracionWifi(String configActual, String ssid, String pass
     }//la de parsear el json
 
   return salida;  
-  }
-
-String nombreSSID(void) {return WiFi.SSID();}  
-
-void WifiWD(void)
-  {
-  if(WiFi.status() != WL_CONNECTED) ESP.restart();
   }

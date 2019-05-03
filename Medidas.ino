@@ -63,36 +63,7 @@ void inicializaSensores(void)
 
   //Variables medidas  
   leeSensores(debugGlobal);
-  //tempC=0.0; 
-  //humedad=0.0;
-  //luz=0.0;
   }
-
-/*************************************************/
-/*  Inicia el resgistro en el controlador        */
-/*  Devuelve si se pudo registrar o no           */
-/*************************************************/  
-int8_t inicializaRegistro(void)
-  {
-  //http://IPControlador/registroHabitacion?id=<id>&nombre=<nombre>
-  String peticion="";
-  struct tipo_respuestaHTTP respuestaHTTP;  
-  
-  peticion = "http://"+IPControlador.toString()+"/registroHabitacion?id=" + String(direccion) + "&nombre=" + nombres[direccion];
-  //Serial.printf("Peticion: %s\n",peticion.c_str());
-  
-  respuestaHTTP=ClienteHTTP(peticion);
-
-  if(respuestaHTTP.httpCode==HTTP_CODE_OK) 
-    {
-    //Serial.printf("Respuesta: %s\n",respuesta.c_str());  
-    if(respuestaHTTP.payload==String(direccion) + SEPARADOR + nombres[direccion]) return true;
-    else return false;
-    }
-  else Serial.println("Error en la llamada.");
-
-  return false;
-  } 
     
 /**************************************/
 /* Lee los sensores                   */

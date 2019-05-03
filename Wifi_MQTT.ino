@@ -24,8 +24,9 @@ PubSubClient clienteMQTT(espClient);
 void inicializaMQTT(void)
   {
   //recupero datos del fichero de configuracion
-  recuperaDatosMQTT(false);
+  if (!recuperaDatosMQTT(false)) Serial.printf("error al recuperar config MQTT\n");
 
+  //Si va bien inicializo con los valores correstoc, si no con valores por defecto
   //confituro el servidor y el puerto
   clienteMQTT.setServer(IPBroker, puertoBroker);
   //configuro el callback, si lo hay
@@ -34,7 +35,7 @@ void inicializaMQTT(void)
   if (conectaMQTT()) Serial.println("connectado al broker");  
   else Serial.printf("error al conectar al broker con estado %i\n",clienteMQTT.state());
   }
-
+  
 /************************************************/
 /* Recupera los datos de configuracion          */
 /* del archivo de MQTT                          */
@@ -51,9 +52,9 @@ boolean recuperaDatosMQTT(boolean debug)
   passwordMQTT="";
   topicRoot="";
     
-  if(leeFichero(MQTT_CONFIG_FILE, cad)) parseaConfiguracionMQTT(cad);
+  if(leeFichero(MQTT_CONFIG_FILE, cad)) return parseaConfiguracionMQTT(cad);
 
-  return true;
+  return false;
   }  
 
 /*********************************************/
@@ -76,7 +77,9 @@ boolean parseaConfiguracionMQTT(String contenido)
     topicRoot=((const char *)json["topicRoot"]);
     Serial.printf("Configuracion leida:\nIP broker: %s\nIP Puerto del broker: %i\nUsuario: %s\nPassword: %s\nTopic root: %s\n",IPBroker.toString().c_str(),puertoBroker,usuarioMQTT.c_str(),passwordMQTT.c_str(),topicRoot.c_str());
 //************************************************************************************************
+    return true;
     }
+  return false;
   }
 
 

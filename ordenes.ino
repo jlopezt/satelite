@@ -213,11 +213,10 @@ void inicializaOrden(void)
   comandos[i].descripcion="Numero de vueltas del bucle principal";
   comandos[i++].p_func_comando=func_comando_vueltas;
 
-
-  comandos[i].comando="pooling";
-  comandos[i].descripcion="Info sobre el mecanismop de poolong";
-  comandos[i++].p_func_comando=func_comando_pooling;
-
+  comandos[i].comando="contadores";
+  comandos[i].descripcion="Numero de vueltas del bucle principal";
+  comandos[i++].p_func_comando=func_comando_contadores;
+  
   //resto
   for(;i<MAX_COMANDOS;)
     {
@@ -296,6 +295,17 @@ void func_comando_info(int iParametro, char* sParametro, float fParametro)//"inf
   Serial.printf("anchoLoop: %i\n",anchoLoop);
   Serial.printf("ahorroEnergia: %i\n",ahorroEnergia);
   Serial.printf("-----------------------------------------------\n");
+
+  Serial.printf("\n-------------Config contadores---------------\n");
+  Serial.printf("multiplicadorAnchoIntervalo= %i\n",multiplicadorAnchoIntervalo);
+  Serial.printf("anchoIntervalo= %i\n",anchoIntervalo);
+  Serial.printf("frecuenciaOTA= %i\n",frecuenciaOTA);
+  Serial.printf("frecuenciaLeeSensores= %i\n",frecuenciaLeeSensores);
+  Serial.printf("frecuenciaServidorWeb= %i\n",frecuenciaServidorWeb);
+  Serial.printf("frecuenciaOrdenes= %i\n",frecuenciaOrdenes);
+  Serial.printf("frecuenciaMQTT= %i\n",frecuenciaMQTT);
+  Serial.printf("frecuenciaWifiWatchdog= %i\n",frecuenciaWifiWatchdog);
+  Serial.printf("-----------------------------------------------\n");  
   }  
 
 void func_comando_fexist(int iParametro, char* sParametro, float fParametro)//"fexist")
@@ -448,13 +458,17 @@ void func_comando_vueltas(int iParametro, char* sParametro, float fParametro)//"
   Serial.printf("vueltas= %i\n", vuelta);  
   }
 
-void func_comando_pooling(int iParametro, char* sParametro, float fParametro)//"debug")
+void func_comando_contadores(int iParametro, char* sParametro, float fParametro)//"debug")
   {
-  Serial.printf("ahora= %i | ultimo registro= %i\n tiempo desde ultimo consulta %i\n", millis(),ultimaLectura,millis()-ultimaLectura);  
-  if(timeoutPolling()) Serial.println("Se ha producido time out del pooling!!");
-  else Serial.println("No se ha producido time out del pooling");
-  }
-  
+  Serial.printf("multiplicadorAnchoIntervalo= %i\n",multiplicadorAnchoIntervalo);
+  Serial.printf("anchoIntervalo= %i\n",anchoIntervalo);
+  Serial.printf("frecuenciaOTA= %i\n",frecuenciaOTA);
+  Serial.printf("frecuenciaLeeSensores= %i\n",frecuenciaLeeSensores);
+  Serial.printf("frecuenciaServidorWeb= %i\n",frecuenciaServidorWeb);
+  Serial.printf("frecuenciaOrdenes= %i\n",frecuenciaOrdenes);
+  Serial.printf("frecuenciaMQTT= %i\n",frecuenciaMQTT);
+  Serial.printf("frecuenciaWifiWatchdog= %i\n",frecuenciaWifiWatchdog);
+  } 
 
 /**********************************************************************/
 /* Salva la configuracion general en formato json                     */

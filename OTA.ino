@@ -39,14 +39,6 @@ boolean iniializaOTA(boolean debug)
 void inicioOTA(void)
   {
   Serial.println("Actualizacion OTA");
-/*  String tipo;
-  if (ArduinoOTA.getCommand() == U_FLASH)
-    tipo = "sketch";
-  else // U_SPIFFS
-    tipo = "filesystem";
-
-  // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-  Serial.println("Actualizando " + tipo);  */
   }
   
 void finOTA(void)
@@ -72,4 +64,3 @@ void errorOTA(ota_error_t error)
   else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
   else if (error == OTA_END_ERROR) Serial.println("End Failed");
   }
-

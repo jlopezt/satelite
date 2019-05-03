@@ -19,6 +19,38 @@ ESP8266WebServer server(PUERTO_WEBSERVER);
 String cabeceraHTML="<HTML><HEAD><TITLE>Control " + nombre_dispoisitivo + " </TITLE></HEAD><BODY><h1>Control " + nombre_dispoisitivo + "<br></h1>";
 String pieHTML="</BODY></HTML>";
 
+void inicializaWebServer(void)
+  {
+  //decalra las URIs a las que va a responder
+  server.on("/", handleRoot); //web de temperatura
+  server.on("/temperatura", handleTemperatura); //Servicio de temperatura
+  server.on("/humedad", handleHumedad); //Servicio de temperatura
+  server.on("/luz", handleLuz); //Servicio de temperatura    
+  server.on("/medidas", handleMedidas); //Servicio de temperatura
+  server.on("/medida", handleMedida); //Servicio de temperatura con respuesta Json
+  server.on("/web", handleWeb); //Servicio de temperatura  
+  server.on("/test", handleTest);  //URI de test
+
+  server.on("/reset", handleReset);  //URI de test  
+  server.on("/restart", handleRestart);  //URI de test
+  server.on("/info", handleInfo);  //URI de test
+  
+  server.on("/creaFichero", handleCreaFichero);  //URI de crear fichero
+  server.on("/borraFichero", handleBorraFichero);  //URI de borrar fichero
+  server.on("/leeFichero", handleLeeFichero);  //URI de leer fichero
+  server.on("/infoFS", handleInfoFS);  //URI de info del FS
+
+  server.onNotFound(handleNotFound);//pagina no encontrada
+
+  server.begin();
+  Serial.println("HTTP server started");
+  }
+
+void webServer(int debug)
+  {
+  server.handleClient();
+  }
+
 void handleRoot() 
   {
   String cad="";
@@ -52,8 +84,6 @@ void handleMedidas()
   server.send(200, "text/plain", cad);  
    
   //Serial.println("Medidas requeridas ok");
-  
-  registraPolling();//Apunto la hora del ultimo polling
   }
 
 /*********************************************/
@@ -82,8 +112,6 @@ void handleMedida()
   server.send(200, "application/json", cad);   
    
   //Serial.println("Medidas requeridas ok");
-    
-  registraPolling();//Apunto la hora del ultimo polling
   }
 
 /*********************************************/
@@ -540,36 +568,4 @@ void handleNotFound()
     }
     
   server.send(404, "text/html", message);
-  }
-
-void inicializaWebServer(void)
-  {
-  //decalra las URIs a las que va a responder
-  server.on("/", handleRoot); //web de temperatura
-  server.on("/temperatura", handleTemperatura); //Servicio de temperatura
-  server.on("/humedad", handleHumedad); //Servicio de temperatura
-  server.on("/luz", handleLuz); //Servicio de temperatura    
-  server.on("/medidas", handleMedidas); //Servicio de temperatura
-  server.on("/medida", handleMedida); //Servicio de temperatura con respuesta Json
-  server.on("/web", handleWeb); //Servicio de temperatura  
-  server.on("/test", handleTest);  //URI de test
-
-  server.on("/reset", handleReset);  //URI de test  
-  server.on("/restart", handleRestart);  //URI de test
-  server.on("/info", handleInfo);  //URI de test
-  
-  server.on("/creaFichero", handleCreaFichero);  //URI de crear fichero
-  server.on("/borraFichero", handleBorraFichero);  //URI de borrar fichero
-  server.on("/leeFichero", handleLeeFichero);  //URI de leer fichero
-  server.on("/infoFS", handleInfoFS);  //URI de info del FS
-
-  server.onNotFound(handleNotFound);//pagina no encontrada
-
-  server.begin();
-  Serial.println("HTTP server started");
-  }
-
-void webServer(int debug)
-  {
-  server.handleClient();
   }

@@ -1,7 +1,16 @@
 {
-"id": "3", 
-"IPControlador": "10.68.1.60",
-"IPPrimerTermometro": "10.68.1.62",
+"id": "10", 
+"IPControlador": "10.68.1.90",
+"IPPrimerTermometro": "10.68.1.92",
 "IPGateway":"10.68.1.1",
-"ahorroEnergia": 0
+"ahorroEnergia": 0,
+
+"multiplicadorAnchoIntervalo": 5,
+"anchoIntervalo": 1200,
+"frecuenciaOTA": 5,
+"frecuenciaLeeSensores": 50,
+"frecuenciaServidorWeb": 1,
+"frecuenciaOrdenes": 2,
+"frecuenciaMQTT": 50,
+"frecuenciaWifiWatchdog": 100 
 }

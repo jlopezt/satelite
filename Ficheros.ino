@@ -52,6 +52,7 @@ boolean leeFichero(String nombre, String &contenido)
 
   return leido;
   }
+  
 /**********************************************************************/
 /* Salva la cadena pasada al fichero especificado                     */
 /* Si ya existe lo sobreescribe                                       */

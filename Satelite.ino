@@ -11,7 +11,7 @@
 
 //Defines generales
 #define NOMBRE_FAMILIA "Termometro_Satelite"
-#define VERSION "1.6.0 (ESP8266v2.4.2 OTA|json|MQTT)"
+#define VERSION "1.7.0 (ESP8266v2.4.2 OTA|json|MQTT|Cont. dinamicos)"
 #define PUERTO_WEBSERVER 80
 #define MAX_SATELITES 16 //numero maximo de satelites de 0 a 15 controlado por los DIP Switch
 #define POLLING_TIME_OUT 60000 //Milisegundos transcurridos entre dos peticiones del copntrolador antes de intentar registrarse
@@ -37,12 +37,11 @@
 
 // Una vuela de loop son ANCHO_INTERVALO segundos 
 #define MULTIPLICADOR_ANCHO_INTERVALO 5 //Multiplica el anchoi del intervalo para mejorar el ahorro de energia
-#define ANCHO_INTERVALO             100 //Ancho en milisegundos de la rodaja de tiempo
+#define ANCHO_INTERVALO            1200 //Ancho en milisegundos de la rodaja de tiempo
 #define FRECUENCIA_OTA                5 //cada cuantas vueltas de loop atiende las acciones
 #define FRECUENCIA_LEE_SENSORES      50 //cada cuantas vueltas de loop lee los sensores
 #define FRECUENCIA_SERVIDOR_WEB       1 //cada cuantas vueltas de loop atiende el servidor web
 #define FRECUENCIA_ORDENES            2 //cada cuantas vueltas de loop atiende las ordenes via serie 
-#define FRECUENCIA_TIME_OUT_POLLING  10 //cada cuantas vueltas de loop revisa si se ha desconectado del Controlador
 #define FRECUENCIA_MQTT              50 //cada cuantas vueltas de loop envia y lee del broket MQTT
 #define FRECUENCIA_WIFI_WATCHDOG    100 //cada cuantas vueltas comprueba si se ha perdido la conexion WiFi
 
@@ -59,15 +58,23 @@ IPAddress IPSatelites[MAX_SATELITES];
 IPAddress IPGateway;
 int8_t direccion=0; //Direccion del modulo
 
-int8_t registrado=0;//determina si se ha podido registrar o no en el controlador
-unsigned long ultimaLectura=0; //El contador de millins() hace overflow cada 50 dias aprox.
-
 /*-----------------Variables comunes---------------*/
 String nombre_dispoisitivo(NOMBRE_FAMILIA);//Nombre del dispositivo, por defecto el de la familia
 uint16_t vuelta = MAX_VUELTAS-100;//0; //vueltas de loop
+
+//Contadores
+uint16_t multiplicadorAnchoIntervalo=5;
+uint16_t anchoIntervalo=1200;
+uint16_t frecuenciaOTA=5;
+uint16_t frecuenciaLeeSensores=50;
+uint16_t frecuenciaServidorWeb=1;
+uint16_t frecuenciaOrdenes=2;
+uint16_t frecuenciaMQTT=50;
+uint16_t frecuenciaWifiWatchdog=100;
+
 int debugGlobal=0; //por defecto desabilitado
-int8_t ahorroEnergia=0;//inicialmente desactivado el ahorro de energia
-int8_t anchoLoop= ANCHO_INTERVALO;//inicialmente desactivado el ahorro de energia
+uint8_t ahorroEnergia=0;//inicialmente desactivado el ahorro de energia
+uint16_t anchoLoop= ANCHO_INTERVALO;//inicialmente desactivado el ahorro de energia
 
 void setup()
   {
@@ -106,9 +113,6 @@ void setup()
   Serial.println("Init sensores ---------------------------------------------------------------------");
   inicializaSensores();
 
-  //Registro en el controlador
-  Serial.println("init registro ---------------------------------------------------------------------");
-
   //Ordenes serie
   Serial.println("Init Ordenes ----------------------------------------------------------------------");  
   inicializaOrden();//Inicializa los buffers de recepcion de ordenes desde PC
@@ -123,26 +127,24 @@ void setup()
 void  loop()
   {  
   //referencia horaria de entrada en el bucle
-  time_t EntradaBucle=0;
-  EntradaBucle=millis();//Hora de entrada en la rodaja de tiempo
+  time_t EntradaBucle=millis();//Hora de entrada en la rodaja de tiempo
 
   //------------- EJECUCION DE TAREAS --------------------------------------
   //Acciones a realizar en el bucle   
   //Prioridad 0: OTA es prioritario.
-  if ((vuelta % FRECUENCIA_OTA)==0) ArduinoOTA.handle(); //Gestion de actualizacion OTA
+  if ((vuelta % frecuenciaOTA)==0) ArduinoOTA.handle(); //Gestion de actualizacion OTA
   //Prioridad 2: Funciones de control.
-  if ((vuelta % FRECUENCIA_LEE_SENSORES)==0) leeSensores(debugGlobal); //lee los sensores de distancia
+  if ((vuelta % frecuenciaLeeSensores)==0) leeSensores(debugGlobal); //lee los sensores de distancia
   //Prioridad 3: Interfaces externos de consulta  
-  if ((vuelta % FRECUENCIA_SERVIDOR_WEB)==0) webServer(debugGlobal); //atiende el servidor web
-  if ((vuelta % FRECUENCIA_MQTT)==0) atiendeMQTT(debugGlobal);
-  if ((vuelta % FRECUENCIA_ORDENES)==0) while(HayOrdenes(debugGlobal)) EjecutaOrdenes(debugGlobal); //Lee ordenes via serie
-  if ((vuelta % FRECUENCIA_WIFI_WATCHDOG)==0) WifiWD();
+  if ((vuelta % frecuenciaServidorWeb)==0) webServer(debugGlobal); //atiende el servidor web
+  if ((vuelta % frecuenciaMQTT)==0) atiendeMQTT(debugGlobal);
+  if ((vuelta % frecuenciaOrdenes)==0) while(HayOrdenes(debugGlobal)) EjecutaOrdenes(debugGlobal); //Lee ordenes via serie
+  if ((vuelta % frecuenciaWifiWatchdog)==0) WifiWD();
   //------------- FIN EJECUCION DE TAREAS ---------------------------------  
 
   //sumo una vuelta de loop, si desborda inicializo vueltas a cero
   vuelta++;//sumo una vuelta de loop  
-  //if (vuelta>=MAX_VUELTAS) vuelta=0;  
-    
+      
   //Espero hasta el final de la rodaja de tiempo
   while(millis()<EntradaBucle+anchoLoop)//ANCHO_INTERVALO)
     {
@@ -163,16 +165,25 @@ boolean inicializaConfiguracion(boolean debug)
   if (debug) Serial.println("Recupero configuracion de archivo...");
 
   //cargo el valores por defecto
+  //Contadores
+  multiplicadorAnchoIntervalo=5;
+  anchoIntervalo=1200;
+  frecuenciaOTA=5;
+  frecuenciaLeeSensores=50;
+  frecuenciaServidorWeb=1;
+  frecuenciaOrdenes=2;
+  frecuenciaMQTT=50;
+  frecuenciaWifiWatchdog=100;  
+  
   ahorroEnergia=0; //ahorro de energia desactivado por defecto
   IPControlador.fromString("0.0.0.0");
   for(int8_t id=0;id<MAX_SATELITES;id++) IPSatelites[id].fromString("0.0.0.0");  
     
   if(leeFichero(GLOBAL_CONFIG_FILE, cad)) parseaConfiguracionGlobal(cad);
 
-  //Ajusto el ancho del intervalo segun el modo de ahorro de energia
-  //anchoLoop=(ahorroEnergia==0?ANCHO_INTERVALO:MULTIPLICADOR_ANCHO_INTERVALO*ANCHO_INTERVALO);
-  if(ahorroEnergia==0) anchoLoop=ANCHO_INTERVALO;
-  else anchoLoop=MULTIPLICADOR_ANCHO_INTERVALO*ANCHO_INTERVALO;
+  //Ajusto el ancho del intervalo segun el modo de ahorro de energia  
+  if(ahorroEnergia==0) anchoLoop=anchoIntervalo;
+  else anchoLoop=multiplicadorAnchoIntervalo*anchoIntervalo;
   
   return true;
   }
@@ -190,6 +201,15 @@ boolean parseaConfiguracionGlobal(String contenido)
     {
     Serial.println("parsed json");
 //******************************Parte especifica del json a leer********************************
+    multiplicadorAnchoIntervalo=atol(json["multiplicadorAnchoIntervalo"]);
+    anchoIntervalo=atol(json["anchoIntervalo"]);
+    frecuenciaOTA=atol(json["frecuenciaOTA"]);
+    frecuenciaLeeSensores=atol(json["frecuenciaLeeSensores"]);
+    frecuenciaServidorWeb=atol(json["frecuenciaServidorWeb"]);
+    frecuenciaOrdenes=atol(json["frecuenciaOrdenes"]);
+    frecuenciaMQTT=atol(json["frecuenciaMQTT"]);
+    frecuenciaWifiWatchdog=atol(json["frecuenciaWifiWatchdog"]);  
+    
     ahorroEnergia=atoi(json["ahorroEnergia"]);
     direccion = atoi(json["id"]); // "5"
     IPControlador.fromString((const char *)json["IPControlador"]);
@@ -201,6 +221,7 @@ boolean parseaConfiguracionGlobal(String contenido)
       IPSatelites[id][3]++;//paso a la siguiente
       }            
     Serial.printf("Configuracion leida:\ndireccion: %i\nIP controlador: %s\nIP primer satelite: %s\nIP Gateway: %s\nAhorro de energia: %i\n",direccion,IPControlador.toString().c_str(),IPSatelites[0].toString().c_str(),IPGateway.toString().c_str(), ahorroEnergia);
+    Serial.printf("\nContadores\nmultiplicadorAnchoIntervalo: %i\nanchoIntervalo: %i\nfrecuenciaOTA: %i\nfrecuenciaLeeSensores: %i\nfrecuenciaServidorWeb: %i\nfrecuenciaOrdenes: %i\nfrecuenciaMQTT: %i\nfrecuenciaWifiWatchdog: %i\n",multiplicadorAnchoIntervalo, anchoIntervalo, frecuenciaOTA, frecuenciaLeeSensores,frecuenciaServidorWeb, frecuenciaOrdenes, frecuenciaMQTT, frecuenciaWifiWatchdog);
 //************************************************************************************************
     }
   }
@@ -238,37 +259,6 @@ int generaId(int id_in)
   return (id_in^mascara);
   }
 
-/************************************************/
-/* Registra el momento de la ultima lectura     */
-/* desde el controlador                         */
-/************************************************/
-void registraPolling(void) 
-  {
-  ultimaLectura=millis();
-  }
-
-/************************************************/
-/* Comprueba si ha pasado mas tiempo del debido */
-/* sin polling del controlador                  */
-/************************************************/
-int timeoutPolling(void)
-  {
-  time_t ahora=millis();
-
-  if(ahora<ultimaLectura) return true; //si el conbtador ha desbordado trata de refrescar
-  
-  if(ahora-ultimaLectura>POLLING_TIME_OUT) return true; 
-    
-  return false;
-  }
-
-void verificaRegistro(void)
-  {
-  if(timeoutPolling()) 
-    {
-    if(inicializaRegistro()) registraPolling();
-    }
-  }
 
 const char* wl_status_to_string(wl_status_t status) {
   switch (status) {
