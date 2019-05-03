@@ -1,0 +1,6 @@
+{
+"id": "10", 
+"IPControlador": "10.68.1.60",
+"IPPrimerTermometro": "10.68.1.62",
+"IPGateway":"10.68.1.1"
+}
