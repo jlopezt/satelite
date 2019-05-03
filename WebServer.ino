@@ -16,7 +16,7 @@ Servicio de test                            http://IPSatelite/test         N/A  
 
 ESP8266WebServer server(PUERTO_WEBSERVER);
 
-String cabeceraHTML="<HTML><HEAD><TITLE>Control " + nombre_dispoisitivo + " </TITLE></HEAD><BODY><h1>Control " + nombre_dispoisitivo + "<br></h1>";
+String cabeceraHTML="<HTML><HEAD><TITLE>" + nombre_dispoisitivo + " </TITLE></HEAD><BODY><h1>" + nombre_dispoisitivo + "<br></h1>";
 String pieHTML="</BODY></HTML>";
 
 void inicializaWebServer(void)
@@ -55,12 +55,37 @@ void handleRoot()
   {
   String cad="";
 
+  cad += cabeceraHTML;
   //genero la respuesta por defecto
-  cad="Modulo satelite. Version ";
+  cad += "Modulo satelite. Version ";
   cad += VERSION;
   cad += "<BR>";
   cad += IDENTIFICACION;
+
+/***********************************/
+  cad +="<BR><BR>";
+  cad += "<table>";  
+  cad += "<tr><td>Servicio</td><td>URL</td><td>Formato entrada</td><td>Formato salida</td><td>Comentario</td><td>Ejemplo peticion</td><td>Ejemplo respuesta</td></tr>";
+  cad += "<tr><td>Informacion</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/"">http://" + String(getIP(debugGlobal)) + "</a></td><td>N/A</td><td>N/A</td><td>Nombre del modulo y version</td><td>http://" + String(getIP(debugGlobal)) + "</td><td>N/A</td></tr>";
+  cad += "<tr><td>Consulta de valores temperatura</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/temperatura"">http://" + String(getIP(debugGlobal)) + "/temperatura</a></td><td>N/A</td><td>{""Temperatura"": $valor$}</td><td>json con la temperatura leida</td><td>http://" + String(getIP(debugGlobal)) + "/temperatura</td><td>{""Temperatura"": 24.3}</td></tr>";
+  cad += "<tr><td>Consulta de valores humedad</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/humedad"">http://" + String(getIP(debugGlobal)) + "/humedad</a></td><td>N/A</td><td>{""Hunmedad"": $valor$}</td><td>json con la humedad leida</td><td>http://" + String(getIP(debugGlobal)) + "/humedad</td><td>{""Humedad"": 24.3}</td></tr>";
+  cad += "<tr><td>Consulta de valores luz</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/luz"">http://" + String(getIP(debugGlobal)) + "/luz</a></td><td>N/A</td><td>{""Luz"": $valor$}</td><td>json con la luz leida</td><td>http://" + String(getIP(debugGlobal)) + "/luz</td><td>{""Luz"": 24.3}</td></tr>";
+
+  cad += "<tr><td>Consulta de valores medidos</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/medidas"">http://" + String(getIP(debugGlobal)) + "/medidas</a></td><td>N/A</td><td>$temp$|$hum$|$luz$|</td><td>Devuelve los valores medidos en formato texto</td><td>http://" + String(getIP(debugGlobal)) + "/medidas</td><td>0|0</td></tr>";    
+  cad += "<tr><td>Consulta de valores medidos (json)</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/medida""> http://" + String(getIP(debugGlobal)) + "/medida </a></td><td>N/A</td><td>{""Temperatura"": $valor$,""Humedad"": $valor$,""Luz"": $valor$,""id"": 0}</td><td>Devuelve los valores medidos en formato json</td><td>http://" + String(getIP(debugGlobal)) + "/medida</td><td>{""Temperatura"": 24.4,""Humedad"": 34.9,""Luz"": 37.0,""id"": 0}</td></tr>";    
+  
+  cad += "<tr><td>Web de valores medidos</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/web"">http://" + String(getIP(debugGlobal)) + "/web</a></td><td>N/A</td><td>HTML</td><td>Devuelve una pagina web para la consulta desde navegador</td><td>http://" + String(getIP(debugGlobal)) + "/web</td><td></td></tr>";    
+  cad += "<tr><td>Test</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/test"">http://" + String(getIP(debugGlobal)) + "/test</a></td><td>N/A</td><td>HTML</td><td>Verifica el estado del Actuador</td></tr>";   
+  cad += "<tr><td>Reinicia el controlador</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/restart"">http://" + String(getIP(debugGlobal)) + "/restart</a></td><td>N/A</td><td>N/A</td><td>Reinicia el modulo</td></tr>";
+  
+  cad += "<tr><td>Informacion del Hw del sistema</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/info"">http://" + String(getIP(debugGlobal)) + "/info</a></td><td>N/A</td><td>HTML</td><td>Informacion del Hw del modulo</td></tr>";
+  cad += "</table>";
+  cad +="<BR><BR>";
+/***********************************/
+  
   cad += "vueltas= " + String(vuelta) + " / " + String(UINT16_MAX);
+  cad += pieHTML;
+  
   server.send(200, "text/html", cad);
   }
 
@@ -292,6 +317,52 @@ void handleInfo(void)
   String cad=cabeceraHTML;
   cad += IDENTIFICACION; //"Modulo " + String(direccion) + " Habitacion= " + nombres[direccion];
 
+  cad += "<BR>-----------------info logica-----------------<BR>";
+  cad += "IP: " + String(getIP(debugGlobal));
+  cad += "<BR>";  
+
+  cad += "id: ";
+  cad += String(direccion);
+  cad += "<BR>";   
+  
+  cad += "Temperatura: ";
+  cad += String(getTemperatura(),1);
+  cad += "<BR>";     
+  cad += "Humedad: ";
+  cad += String(getHumedad(),1);
+  cad += "<BR>";     
+  cad += "Luz: ";
+  cad += String(getLuz(),1);
+  cad += "<BR>";     
+  cad += "-----------------------------------------------<BR>"; 
+  
+  cad += "<BR>-----------------Contadores info-----------------<BR>";
+  cad += "multiplicadorAnchoIntervalo: ";
+  cad += String(multiplicadorAnchoIntervalo);
+  cad += "<BR>";     
+  cad += "anchoIntervalo: ";
+  cad += String(anchoIntervalo);
+  cad += "<BR>";   
+  cad += "frecuenciaOTA: ";
+  cad += String(frecuenciaOTA);
+  cad += "<BR>";   
+  cad += "frecuenciaLeeSensores: ";
+  cad += String(frecuenciaLeeSensores);
+  cad += "<BR>";   
+  cad += "frecuenciaServidorWeb: ";
+  cad += String(frecuenciaServidorWeb);
+  cad += "<BR>";   
+  cad += "frecuenciaOrdenes: ";
+  cad += String(frecuenciaOrdenes);
+  cad += "<BR>"; 
+  cad += "frecuenciaMQTT: ";
+  cad += String(frecuenciaMQTT);
+  cad += "<BR>";
+  cad += "frecuenciaWifiWatchdog: ";
+  cad += String(frecuenciaWifiWatchdog); 
+  cad += "<BR>";  
+  cad += "-----------------------------------------------<BR>"; 
+  
   cad += "<BR>-----------------WiFi info-----------------<BR>";
   cad += "SSID: " + nombreSSID();
   cad += "<BR>";    

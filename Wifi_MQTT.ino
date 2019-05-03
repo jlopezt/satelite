@@ -1,30 +1,47 @@
-/***********************************************
- * Librria de sooprte del protocolo MQTT       *
- * para arduino/ESP8266/ESP32                  *
- *                                             *
- * https://pubsubclient.knolleary.net/api.html *
- ***********************************************/
+/**********************************************/
+/*                                            */
+/*  Gestion de la conexion MQTT               */
+/*  Incluye la conexion al bus y la           */
+/*  definicion del callback de suscripcion    */
+/*                                            */
+/* Librria de sooprte del protocolo MQTT      */
+/* para arduino/ESP8266/ESP32                 */
+/*                                            */
+/* https://pubsubclient.knolleary.net/api.html*/
+/**********************************************/
+//Includes MQTT
+//#define MQTT_KEEPALIVE 60
 #include <PubSubClient.h>
+#define CLEAN_SESSION TRUE
 
-#define WILL_TOPIC  "will/" + nombres[direccion]
+//definicion de los comodines del MQTT
+#define WILDCARD_ALL      "#"
+#define WILDCARD_ONELEVEL "+"
+
+//definicion de constantes para WILL
+#define WILL_TOPIC  "will"
 #define WILL_QOS    1
 #define WILL_RETAIN false
-#define WILL_MSG    "vueltas: " + vuelta
+#define WILL_MSG    String("¡"+ID_MQTT+" caido!").c_str()
 
+//Definicion de variables globales
+String ID_MQTT;//="Modulo_" + String(direccion); //ID del modulo en su conexion al broker
 IPAddress IPBroker; //IP del bus MQTT
 uint16_t puertoBroker; //Puerto del bus MQTT
 String usuarioMQTT; //usuario par ala conxion al broker
 String passwordMQTT; //password parala conexion al broker
 String topicRoot; //raiz del topic a publicar. Util para separar mensajes de produccion y prepropduccion
-String ID_MQTT="Modulo_" + String(direccion) + "_" + nombres[direccion]; //ID del modulo en su conexion al broker
 
 WiFiClient espClient;
 PubSubClient clienteMQTT(espClient);
 
+/************************************************/
+/* Inicializa valiables y estado del bus MQTT   */
+/************************************************/
 void inicializaMQTT(void)
   {
   //recupero datos del fichero de configuracion
-  if (!recuperaDatosMQTT(false)) Serial.printf("error al recuperar config MQTT\n");
+  if (!recuperaDatosMQTT(false)) Serial.printf("error al recuperar config MQTT.\nConfiguracion por defecto.\n");
 
   //Si va bien inicializo con los valores correstoc, si no con valores por defecto
   //confituro el servidor y el puerto
@@ -45,7 +62,10 @@ boolean recuperaDatosMQTT(boolean debug)
   String cad="";
   if (debug) Serial.println("Recupero configuracion de archivo...");
 
-  //cargo el valores por defecto
+  //Este valor no se lee del fichero
+  ID_MQTT="Modulo_" + String(direccion); //ID del modulo en su conexion al broker
+
+  //cargo el valores por defecto  
   IPBroker.fromString("0.0.0.0");
   puertoBroker=0;
   usuarioMQTT="";
@@ -53,7 +73,16 @@ boolean recuperaDatosMQTT(boolean debug)
   topicRoot="";
     
   if(leeFichero(MQTT_CONFIG_FILE, cad)) return parseaConfiguracionMQTT(cad);
-
+  else
+    {
+    //Confgiguracion por defecto
+    Serial.printf("No existe fichero de configuracion MQTT\n");
+    cad="{\"IPBroker\": \"10.68.1.100\", \"puerto\": 1883, \"usuarioMQTT\": \"usuario\", \"passwordMQTT\": \"password\", \"topicRoot\": \"casa\"}";
+    salvaFichero(MQTT_CONFIG_FILE, MQTT_CONFIG_BAK_FILE, cad);
+    Serial.printf("Fichero de configuracion MQTT creado por defecto\n");
+    parseaConfiguracionWifi(cad);
+    }
+    
   return false;
   }  
 
@@ -106,8 +135,8 @@ boolean conectaMQTT(void)
     if(debugGlobal) Serial.println("No conectado, intentando conectar.");
   
     // Attempt to connect
-    //boolean connect (clientID, willTopic, willQoS, willRetain, willMessage)
-    if (clienteMQTT.connect(ID_MQTT.c_str(),String(WILL_TOPIC).c_str(),WILL_QOS,WILL_RETAIN,String(WILL_MSG).c_str()))
+    //boolean connect(const char* id, const char* user, const char* pass, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage, boolean cleanSession);    
+    if (clienteMQTT.connect(ID_MQTT.c_str(), usuarioMQTT.c_str(), passwordMQTT.c_str(), (topicRoot+"/"+String(WILL_TOPIC)).c_str(), WILL_QOS, WILL_RETAIN, String(WILL_MSG).c_str(), CLEAN_SESSION))
       {
       if(debugGlobal) Serial.println("conectado");
       return(true);
@@ -115,7 +144,7 @@ boolean conectaMQTT(void)
 
     if(intentos++>3) return (false);
     
-    if(debugGlobal) Serial.println("Error al conectar al broker...");
+    if(debugGlobal) Serial.printf("Error al conectar al broker. Estado: %s\n",stateTexto().c_str());
     delay(500);      
     }
   }
@@ -123,6 +152,28 @@ boolean conectaMQTT(void)
 /********************************************/
 /* Funcion que envia un mensaje al bus      */
 /* MQTT del broker                          */
+/********************************************/
+boolean enviarMQTT_old(String topic, String payload)
+  {
+  //si no esta conectado, conecto
+  if (!clienteMQTT.connected()) conectaMQTT();
+
+  //si y esta conectado envio, sino salgo con error
+  if (clienteMQTT.connected()) 
+    {
+    if(!topic.startsWith("/")) topic = "/" + topic;  
+    topic=topicRoot+ "/" + nombres[direccion] + topic;
+
+    //Serial.printf("Enviando:\ntopic:  %s | payload: %s\n",topic.c_str(),payload.c_str());
+    return clienteMQTT.publish(topic.c_str(), payload.c_str());
+    }
+  else return (false);
+  }
+
+/********************************************/
+/* Funcion que envia un mensaje al bus      */
+/* MQTT del broker                          */
+/* Eliminado limite del buffer de envio     */
 /********************************************/
 boolean enviarMQTT(String topic, String payload)
   {
@@ -132,8 +183,16 @@ boolean enviarMQTT(String topic, String payload)
   //si y esta conectado envio, sino salgo con error
   if (clienteMQTT.connected()) 
     {
+    if(!topic.startsWith("/")) topic = "/" + topic;  
+    topic=topicRoot+ "/" + nombres[direccion] + topic;
+    
     //Serial.printf("Enviando:\ntopic:  %s | payload: %s\n",topic.c_str(),payload.c_str());
-    return (clienteMQTT.publish(topic.c_str(), payload.c_str()));      
+  
+    if(clienteMQTT.beginPublish(topic.c_str(), payload.length(), false))//boolean beginPublish(const char* topic, unsigned int plength, boolean retained)
+      {
+      for(uint8_t i=0;i<payload.length();i++) clienteMQTT.write((uint8_t)payload.charAt(i));//virtual size_t write(uint8_t);
+      return(clienteMQTT.endPublish()); //int endPublish();
+      }
     }
   else return (false);
   }
@@ -144,7 +203,8 @@ boolean enviarMQTT(String topic, String payload)
 /********************************************/
 void atiendeMQTT(boolean debug)
   {
-  String topic=topicRoot+ "/" + nombres[direccion] + "/medidas";
+  //String topic=topicRoot+ "/" + nombres[direccion] + "/medidas";
+  String topic="/medidas";
   String payload=generaJson();
 
   if(enviarMQTT(topic, payload)) if(debug)Serial.println("Enviado json al broker con exito.");
@@ -153,6 +213,11 @@ void atiendeMQTT(boolean debug)
   clienteMQTT.loop();
   }  
 
+/******************************* UTILIDADES *************************************/
+/********************************************/
+/* Funcion que devuleve el estado           */
+/* de conexion MQTT al bus                  */
+/********************************************/
 String stateTexto(void)  
   {
   int r = clienteMQTT.state();

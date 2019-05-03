@@ -209,14 +209,14 @@ void inicializaOrden(void)
   comandos[i].descripcion="Nombre de la base WiFi conectada";
   comandos[i++].p_func_comando=func_comando_getSSID;
 
-  comandos[i].comando="vueltas";
-  comandos[i].descripcion="Numero de vueltas del bucle principal";
-  comandos[i++].p_func_comando=func_comando_vueltas;
-
   comandos[i].comando="contadores";
   comandos[i].descripcion="Numero de vueltas del bucle principal";
   comandos[i++].p_func_comando=func_comando_contadores;
-  
+
+  comandos[i].comando="MQTTConfig";
+  comandos[i].descripcion="Configuración de MQTT";
+  comandos[i++].p_func_comando=func_comando_MQTTConfig;
+    
   //resto
   for(;i<MAX_COMANDOS;)
     {
@@ -453,23 +453,25 @@ void func_comando_getSSID(int iParametro, char* sParametro, float fParametro)//"
   Serial.printf("Red WiFi: %s\nPotencia: %i\n", nombreSSID().c_str(),WiFi.RSSI());  
   }
 
-void func_comando_vueltas(int iParametro, char* sParametro, float fParametro)//"debug")
-  {
-  Serial.printf("vueltas= %i\n", vuelta);  
-  }
-
 void func_comando_contadores(int iParametro, char* sParametro, float fParametro)//"debug")
   {
+  Serial.printf("vueltas= %i\n",vuelta);  
+  Serial.printf("anchoLoop= %i\n",anchoLoop);
   Serial.printf("multiplicadorAnchoIntervalo= %i\n",multiplicadorAnchoIntervalo);
   Serial.printf("anchoIntervalo= %i\n",anchoIntervalo);
-  Serial.printf("frecuenciaOTA= %i\n",frecuenciaOTA);
-  Serial.printf("frecuenciaLeeSensores= %i\n",frecuenciaLeeSensores);
-  Serial.printf("frecuenciaServidorWeb= %i\n",frecuenciaServidorWeb);
-  Serial.printf("frecuenciaOrdenes= %i\n",frecuenciaOrdenes);
-  Serial.printf("frecuenciaMQTT= %i\n",frecuenciaMQTT);
-  Serial.printf("frecuenciaWifiWatchdog= %i\n",frecuenciaWifiWatchdog);
+  Serial.printf("frecuenciaOTA= %i | %i\n",frecuenciaOTA,vuelta%frecuenciaOTA);
+  Serial.printf("frecuenciaLeeSensores= %i | %i\n",frecuenciaLeeSensores,vuelta%frecuenciaLeeSensores);
+  Serial.printf("frecuenciaServidorWeb= %i | %i\n",frecuenciaServidorWeb,vuelta%frecuenciaServidorWeb);
+  Serial.printf("frecuenciaOrdenes= %i | %i\n",frecuenciaOrdenes,vuelta%frecuenciaOrdenes);
+  Serial.printf("frecuenciaMQTT= %i | %i\n",frecuenciaMQTT,vuelta%frecuenciaMQTT);
+  Serial.printf("frecuenciaWifiWatchdog= %i | %i\n",frecuenciaWifiWatchdog,vuelta%frecuenciaWifiWatchdog);
   } 
 
+
+void func_comando_MQTTConfig(int iParametro, char* sParametro, float fParametro)//"debug")
+  {
+  Serial.printf("Configuracion leida:\nID MQTT: %s\nIP broker: %s\nIP Puerto del broker: %i\nUsuario: %s\nPassword: %s\nTopic root: %s\nWill topic: %s\nWill msg: %s\nClean session: %i\n",ID_MQTT.c_str(),IPBroker.toString().c_str(),puertoBroker,usuarioMQTT.c_str(),passwordMQTT.c_str(),topicRoot.c_str(),(topicRoot+"/"+String(WILL_TOPIC)).c_str(),String(WILL_MSG).c_str(), CLEAN_SESSION);
+  }  
 /**********************************************************************/
 /* Salva la configuracion general en formato json                     */
 /**********************************************************************/  

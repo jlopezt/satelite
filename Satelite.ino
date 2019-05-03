@@ -11,10 +11,10 @@
 
 //Defines generales
 #define NOMBRE_FAMILIA "Termometro_Satelite"
-#define VERSION "1.7.0 (ESP8266v2.4.2 OTA|json|MQTT|Cont. dinamicos)"
+#define VERSION "1.7.4.1 (ESP8266v2.4.2 OTA|json|MQTT|Cont. dinamicos)"
 #define PUERTO_WEBSERVER 80
 #define MAX_SATELITES 16 //numero maximo de satelites de 0 a 15 controlado por los DIP Switch
-#define POLLING_TIME_OUT 60000 //Milisegundos transcurridos entre dos peticiones del copntrolador antes de intentar registrarse
+#define POLLING_TIME_OUT 60000 //Milisegundos transcurridos entre dos peticiones del controlador antes de intentar registrarse
 
 #define SEPARADOR        '|'
 #define SUBSEPARADOR     '#'
@@ -36,7 +36,7 @@
 #define PIN_DESBORDE_TIEMPO D5
 
 // Una vuela de loop son ANCHO_INTERVALO segundos 
-#define MULTIPLICADOR_ANCHO_INTERVALO 5 //Multiplica el anchoi del intervalo para mejorar el ahorro de energia
+#define MULTIPLICADOR_ANCHO_INTERVALO 5 //Multiplica el ancho del intervalo para mejorar el ahorro de energia
 #define ANCHO_INTERVALO            1200 //Ancho en milisegundos de la rodaja de tiempo
 #define FRECUENCIA_OTA                5 //cada cuantas vueltas de loop atiende las acciones
 #define FRECUENCIA_LEE_SENSORES      50 //cada cuantas vueltas de loop lee los sensores
@@ -61,6 +61,9 @@ int8_t direccion=0; //Direccion del modulo
 /*-----------------Variables comunes---------------*/
 String nombre_dispoisitivo(NOMBRE_FAMILIA);//Nombre del dispositivo, por defecto el de la familia
 uint16_t vuelta = MAX_VUELTAS-100;//0; //vueltas de loop
+int debugGlobal=0; //por defecto desabilitado
+uint8_t ahorroEnergia=0;//inicialmente desactivado el ahorro de energia
+time_t anchoLoop= ANCHO_INTERVALO;//inicialmente desactivado el ahorro de energia
 
 //Contadores
 uint16_t multiplicadorAnchoIntervalo=5;
@@ -71,10 +74,6 @@ uint16_t frecuenciaServidorWeb=1;
 uint16_t frecuenciaOrdenes=2;
 uint16_t frecuenciaMQTT=50;
 uint16_t frecuenciaWifiWatchdog=100;
-
-int debugGlobal=0; //por defecto desabilitado
-uint8_t ahorroEnergia=0;//inicialmente desactivado el ahorro de energia
-uint16_t anchoLoop= ANCHO_INTERVALO;//inicialmente desactivado el ahorro de energia
 
 void setup()
   {
@@ -99,7 +98,7 @@ void setup()
     /*----------------Inicializaciones que necesitan red-------------*/
     //OTA
     Serial.println("Init OTA -----------------------------------------------------------------------");
-    iniializaOTA(debugGlobal);
+    inicializaOTA(debugGlobal);
     //MQTT
     Serial.println("Init MQTT -----------------------------------------------------------------------");
     inicializaMQTT();
@@ -192,6 +191,14 @@ boolean inicializaConfiguracion(boolean debug)
 /* Parsea el json leido del fichero de       */
 /* configuracio global                       */
 /*********************************************/
+/*
+// Is there a value named "error" in the object?
+if (obj.containsKey("error")) {
+// Get the text of the error
+const char* error = obj["error"];
+// ...
+}
+*/
 boolean parseaConfiguracionGlobal(String contenido)
   {  
   DynamicJsonBuffer jsonBuffer;

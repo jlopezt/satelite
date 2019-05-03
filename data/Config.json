@@ -1,12 +1,12 @@
 {
-"id": "10", 
-"IPControlador": "10.68.1.90",
-"IPPrimerTermometro": "10.68.1.92",
+"id": "7", 
+"IPControlador": "10.68.1.60",
+"IPPrimerTermometro": "10.68.1.62",
 "IPGateway":"10.68.1.1",
 "ahorroEnergia": 0,
 
 "multiplicadorAnchoIntervalo": 5,
-"anchoIntervalo": 1200,
+"anchoIntervalo": 100,
 "frecuenciaOTA": 5,
 "frecuenciaLeeSensores": 50,
 "frecuenciaServidorWeb": 1,
