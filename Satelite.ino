@@ -1,4 +1,4 @@
- /*
+/*
  * Satelite de medidas para Termostato
  *
  * Medidor distribuido
@@ -43,6 +43,7 @@
 #define FRECUENCIA_SERVIDOR_WEB       1 //cada cuantas vueltas de loop atiende el servidor web
 #define FRECUENCIA_ORDENES            2 //cada cuantas vueltas de loop atiende las ordenes via serie 
 #define FRECUENCIA_MQTT              50 //cada cuantas vueltas de loop envia y lee del broket MQTT
+#define FRECUENCIA_ENVIA_DATOS      100 //cada cuantas vueltas de loop publica el estado en el broker MQTT
 #define FRECUENCIA_WIFI_WATCHDOG    100 //cada cuantas vueltas comprueba si se ha perdido la conexion WiFi
 
 #include <TimeLib.h>  // download from: http://www.arduino.cc/playground/Code/Time
@@ -73,6 +74,7 @@ uint16_t frecuenciaLeeSensores=50;
 uint16_t frecuenciaServidorWeb=1;
 uint16_t frecuenciaOrdenes=2;
 uint16_t frecuenciaMQTT=50;
+uint16_t frecuenciaEnviaDatos=100;
 uint16_t frecuenciaWifiWatchdog=100;
 
 void setup()
@@ -136,7 +138,8 @@ void  loop()
   if ((vuelta % frecuenciaLeeSensores)==0) leeSensores(debugGlobal); //lee los sensores de distancia
   //Prioridad 3: Interfaces externos de consulta  
   if ((vuelta % frecuenciaServidorWeb)==0) webServer(debugGlobal); //atiende el servidor web
-  if ((vuelta % frecuenciaMQTT)==0) atiendeMQTT(debugGlobal);
+  if ((vuelta % frecuenciaMQTT)==0) atiendeMQTT();
+  if ((vuelta % frecuenciaEnviaDatos)==0) enviaDatos(debugGlobal);
   if ((vuelta % frecuenciaOrdenes)==0) while(HayOrdenes(debugGlobal)) EjecutaOrdenes(debugGlobal); //Lee ordenes via serie
   if ((vuelta % frecuenciaWifiWatchdog)==0) WifiWD();
   //------------- FIN EJECUCION DE TAREAS ---------------------------------  
@@ -172,6 +175,7 @@ boolean inicializaConfiguracion(boolean debug)
   frecuenciaServidorWeb=1;
   frecuenciaOrdenes=2;
   frecuenciaMQTT=50;
+  frecuenciaEnviaDatos=100;
   frecuenciaWifiWatchdog=100;  
   
   ahorroEnergia=0; //ahorro de energia desactivado por defecto
@@ -208,27 +212,29 @@ boolean parseaConfiguracionGlobal(String contenido)
     {
     Serial.println("parsed json");
 //******************************Parte especifica del json a leer********************************
-    multiplicadorAnchoIntervalo=atol(json["multiplicadorAnchoIntervalo"]);
-    anchoIntervalo=atol(json["anchoIntervalo"]);
-    frecuenciaOTA=atol(json["frecuenciaOTA"]);
-    frecuenciaLeeSensores=atol(json["frecuenciaLeeSensores"]);
-    frecuenciaServidorWeb=atol(json["frecuenciaServidorWeb"]);
-    frecuenciaOrdenes=atol(json["frecuenciaOrdenes"]);
-    frecuenciaMQTT=atol(json["frecuenciaMQTT"]);
-    frecuenciaWifiWatchdog=atol(json["frecuenciaWifiWatchdog"]);  
+    multiplicadorAnchoIntervalo=json.get<uint16_t>("multiplicadorAnchoIntervalo");
+    anchoIntervalo=json.get<uint16_t>("anchoIntervalo");
+    frecuenciaOTA=json.get<uint16_t>("frecuenciaOTA");
+    frecuenciaLeeSensores=json.get<uint16_t>("frecuenciaLeeSensores");
+    frecuenciaServidorWeb=json.get<uint16_t>("frecuenciaServidorWeb");
+    frecuenciaOrdenes=json.get<uint16_t>("frecuenciaOrdenes");
+    frecuenciaMQTT=json.get<uint16_t>("frecuenciaMQTT");
+    frecuenciaEnviaDatos=json.get<uint16_t>("frecuenciaEnviaDatos");
+    frecuenciaWifiWatchdog=json.get<uint16_t>("frecuenciaWifiWatchdog");  
     
-    ahorroEnergia=atoi(json["ahorroEnergia"]);
-    direccion = atoi(json["id"]); // "5"
-    IPControlador.fromString((const char *)json["IPControlador"]);
-    IPSatelites[0].fromString((const char *)json["IPPrimerTermometro"]);
-    IPGateway.fromString((const char *)json["IPGateway"]);
+    ahorroEnergia=json.get<uint16_t>("ahorroEnergia");
+    direccion = json.get<uint16_t>("id"); // "5"
+    IPControlador.fromString(json.get<String>("IPControlador"));
+    IPSatelites[0].fromString(json.get<String>("IPPrimerTermometro"));
+    IPGateway.fromString(json.get<String>("IPGateway"));
+    
     for(int8_t id=1;id<MAX_SATELITES;id++)
       {
       IPSatelites[id]=IPSatelites[id-1];//copio la anterior
       IPSatelites[id][3]++;//paso a la siguiente
       }            
     Serial.printf("Configuracion leida:\ndireccion: %i\nIP controlador: %s\nIP primer satelite: %s\nIP Gateway: %s\nAhorro de energia: %i\n",direccion,IPControlador.toString().c_str(),IPSatelites[0].toString().c_str(),IPGateway.toString().c_str(), ahorroEnergia);
-    Serial.printf("\nContadores\nmultiplicadorAnchoIntervalo: %i\nanchoIntervalo: %i\nfrecuenciaOTA: %i\nfrecuenciaLeeSensores: %i\nfrecuenciaServidorWeb: %i\nfrecuenciaOrdenes: %i\nfrecuenciaMQTT: %i\nfrecuenciaWifiWatchdog: %i\n",multiplicadorAnchoIntervalo, anchoIntervalo, frecuenciaOTA, frecuenciaLeeSensores,frecuenciaServidorWeb, frecuenciaOrdenes, frecuenciaMQTT, frecuenciaWifiWatchdog);
+    Serial.printf("\nContadores\nmultiplicadorAnchoIntervalo: %i\nanchoIntervalo: %i\nfrecuenciaOTA: %i\nfrecuenciaLeeSensores: %i\nfrecuenciaServidorWeb: %i\nfrecuenciaOrdenes: %i\nfrecuenciaMQTT: %i\nfrecuenciaEnviaDatos: %i\nfrecuenciaWifiWatchdog: %i\n",multiplicadorAnchoIntervalo, anchoIntervalo, frecuenciaOTA, frecuenciaLeeSensores,frecuenciaServidorWeb, frecuenciaOrdenes, frecuenciaMQTT, frecuenciaEnviaDatos, frecuenciaWifiWatchdog);
 //************************************************************************************************
     }
   }

@@ -63,6 +63,11 @@ void handleRoot()
   cad += IDENTIFICACION;
 
 /***********************************/
+
+  cad += "Valores medidos: ";
+  cad += generaJson();
+
+/***********************************/
   cad +="<BR><BR>";
   cad += "<table>";  
   cad += "<tr><td>Servicio</td><td>URL</td><td>Formato entrada</td><td>Formato salida</td><td>Comentario</td><td>Ejemplo peticion</td><td>Ejemplo respuesta</td></tr>";

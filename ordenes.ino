@@ -213,9 +213,9 @@ void inicializaOrden(void)
   comandos[i].descripcion="Numero de vueltas del bucle principal";
   comandos[i++].p_func_comando=func_comando_contadores;
 
-  comandos[i].comando="MQTTConfig";
+  comandos[i].comando="mqtt";
   comandos[i].descripcion="Configuración de MQTT";
-  comandos[i++].p_func_comando=func_comando_MQTTConfig;
+  comandos[i++].p_func_comando=func_comando_mqtt;
     
   //resto
   for(;i<MAX_COMANDOS;)
@@ -464,14 +464,15 @@ void func_comando_contadores(int iParametro, char* sParametro, float fParametro)
   Serial.printf("frecuenciaServidorWeb= %i | %i\n",frecuenciaServidorWeb,vuelta%frecuenciaServidorWeb);
   Serial.printf("frecuenciaOrdenes= %i | %i\n",frecuenciaOrdenes,vuelta%frecuenciaOrdenes);
   Serial.printf("frecuenciaMQTT= %i | %i\n",frecuenciaMQTT,vuelta%frecuenciaMQTT);
+  Serial.printf("frecuenciaEnviaDatos= %i | %i\n",frecuenciaEnviaDatos,vuelta%frecuenciaEnviaDatos);  
   Serial.printf("frecuenciaWifiWatchdog= %i | %i\n",frecuenciaWifiWatchdog,vuelta%frecuenciaWifiWatchdog);
   } 
 
-
-void func_comando_MQTTConfig(int iParametro, char* sParametro, float fParametro)//"debug")
+void func_comando_mqtt(int iParametro, char* sParametro, float fParametro)//"debug")
   {
-  Serial.printf("Configuracion leida:\nID MQTT: %s\nIP broker: %s\nIP Puerto del broker: %i\nUsuario: %s\nPassword: %s\nTopic root: %s\nWill topic: %s\nWill msg: %s\nClean session: %i\n",ID_MQTT.c_str(),IPBroker.toString().c_str(),puertoBroker,usuarioMQTT.c_str(),passwordMQTT.c_str(),topicRoot.c_str(),(topicRoot+"/"+String(WILL_TOPIC)).c_str(),String(WILL_MSG).c_str(), CLEAN_SESSION);
+  Serial.printf("Configuracion leida:\nID MQTT: %s\nIP broker: %s\nIP Puerto del broker: %i\ntimeReconnectMQTT: %i\nUsuario: %s\nPassword: %s\nTopic root: %s\nWill topic: %s\nWill msg: %s\nClean session: %i\n", ID_MQTT.c_str(), IPBroker.toString().c_str(), puertoBroker, timeReconnectMQTT, usuarioMQTT.c_str(),passwordMQTT.c_str(),topicRoot.c_str(),(topicRoot+"/"+String(WILL_TOPIC)).c_str(),String(WILL_MSG).c_str(), CLEAN_SESSION);
   }  
+  
 /**********************************************************************/
 /* Salva la configuracion general en formato json                     */
 /**********************************************************************/  

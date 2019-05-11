@@ -98,7 +98,7 @@ boolean parseaConfiguracionWifi(String contenido)
     for(uint8_t i=0;i<wifi.size();i++)
       {
       const char* wifi_ssid = wifi[i]["ssid"];
-      const char* wifi_password = wifi[i]["password"];
+      const char* wifi_password = wifi[i]["password"];      
       WiFiMulti.addAP(wifi_ssid , wifi_password);
       Serial.printf("Red *%s* añadida.\n",wifi_ssid);
       }//del for

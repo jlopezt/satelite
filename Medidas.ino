@@ -193,6 +193,17 @@ String generaJson(void)
   return cad;
   }
 
+/*******************************************************/
+/*                                                     */
+/* Genera el json con el estado delcontrolador,        */
+/* las habitaciones y las salidas                      */
+/*                                                     */
+/*******************************************************/
+String generaJsonEstado(void)
+  {
+  return generaJson();
+  } 
+  
 //////PARA DEPURACION  
 void setTemp(float f) {tempC=f;}
 void setHum(float f) {humedad=f;}
