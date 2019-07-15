@@ -1,7 +1,7 @@
 {
 "id": "0", 
-"IPControlador": "10.68.1.90",
-"IPPrimerTermometro": "10.68.1.92",
+"IPControlador": "10.68.0.60",
+"IPPrimerTermometro": "10.68.0.62",
 "IPGateway":"10.68.1.1",
 "ahorroEnergia": 0,
 
