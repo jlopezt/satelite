@@ -11,7 +11,7 @@
 
 //Defines generales
 #define NOMBRE_FAMILIA "Termometro_Satelite"
-#define VERSION "1.7.4.1 (ESP8266v2.4.2 OTA|json|MQTT|Cont. dinamicos)"
+#define VERSION "1.7.5 (ESP8266v2.4.2 OTA|json|MQTT|Cont. dinamicos)"
 #define PUERTO_WEBSERVER 80
 #define MAX_SATELITES 16 //numero maximo de satelites de 0 a 15 controlado por los DIP Switch
 #define POLLING_TIME_OUT 60000 //Milisegundos transcurridos entre dos peticiones del controlador antes de intentar registrarse
