@@ -7,27 +7,30 @@
  * Un sensor de luminancia LDR en pin YYY
  * Servicio web levantado en puerto ZZZ
  */
-#include <FS.h>                   //this needs to be first, or it all crashes and burns...
 
 //Defines generales
 #define NOMBRE_FAMILIA "Termometro_Satelite"
-#define VERSION "1.7.5 (ESP8266v2.4.2 OTA|json|MQTT|Cont. dinamicos)"
-#define PUERTO_WEBSERVER 80
-#define MAX_SATELITES 16 //numero maximo de satelites de 0 a 15 controlado por los DIP Switch
-#define POLLING_TIME_OUT 60000 //Milisegundos transcurridos entre dos peticiones del controlador antes de intentar registrarse
-
+#define VERSION "1.8.0 (ESP8266v2.4.2 OTA|json|MQTT|Cont. dinamicos)" //subred 255.255.0.0 | candado | incializacion de ficheros | gestion de ficheros por web
 #define SEPARADOR        '|'
 #define SUBSEPARADOR     '#'
 #define KO               -1
 #define OK                0
 #define MAX_VUELTAS  UINT16_MAX// 32767 
 
-#define GLOBAL_CONFIG_FILE     "/Config.json"
-#define GLOBAL_CONFIG_BAK_FILE "/Config.json.bak"
-#define WIFI_CONFIG_FILE       "/WiFiConfig.json"
-#define WIFI_CONFIG_BAK_FILE   "/WiFiConfig.json.bak"
-#define MQTT_CONFIG_FILE       "/MQTTConfig.json"
-#define MQTT_CONFIG_BAK_FILE   "/MQTTConfig.json.bak"
+#define PUERTO_WEBSERVER 80
+#define MAX_SATELITES 16 //numero maximo de satelites de 0 a 15 controlado por los DIP Switch
+#define POLLING_TIME_OUT 60000 //Milisegundos transcurridos entre dos peticiones del controlador antes de intentar registrarse
+
+//Nombres de ficheros
+#define FICHERO_CANDADO            "/Candado"
+#define GLOBAL_CONFIG_FILE         "/Config.json"
+#define GLOBAL_CONFIG_BAK_FILE     "/Config.json.bak"
+#define SENSORES_CONFIG_FILE       "/SensoresConfig.json"
+#define SENSORES_CONFIG_BAK_FILE   "/SensoresConfig.json.bak"
+#define WIFI_CONFIG_FILE           "/WiFiConfig.json"
+#define WIFI_CONFIG_BAK_FILE       "/WiFiConfig.json.bak"
+#define MQTT_CONFIG_FILE           "/MQTTConfig.json"
+#define MQTT_CONFIG_BAK_FILE       "/MQTTConfig.json.bak"
 
 //Defines de pines de los captadores
 #define ONE_WIRE_BUS        D7//Pin donde esta el DS18B20
@@ -46,6 +49,7 @@
 #define FRECUENCIA_ENVIA_DATOS      100 //cada cuantas vueltas de loop publica el estado en el broker MQTT
 #define FRECUENCIA_WIFI_WATCHDOG    100 //cada cuantas vueltas comprueba si se ha perdido la conexion WiFi
 
+#include <FS.h>                   //this needs to be first, or it all crashes and burns...
 #include <TimeLib.h>  // download from: http://www.arduino.cc/playground/Code/Time
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
@@ -53,18 +57,14 @@
 #include <ArduinoOTA.h>
 #include <ArduinoJson.h>
 
-//IPs de los diferentes dispositivos 
-IPAddress IPControlador;
-IPAddress IPSatelites[MAX_SATELITES];
-IPAddress IPGateway;
-int8_t direccion=0; //Direccion del modulo
-
 /*-----------------Variables comunes---------------*/
-String nombre_dispoisitivo(NOMBRE_FAMILIA);//Nombre del dispositivo, por defecto el de la familia
+String nombre_dispositivo(NOMBRE_FAMILIA);//Nombre del dispositivo, por defecto el de la familia
+int8_t direccion=0; //Direccion del modulo
 uint16_t vuelta = MAX_VUELTAS-100;//0; //vueltas de loop
 int debugGlobal=0; //por defecto desabilitado
 uint8_t ahorroEnergia=0;//inicialmente desactivado el ahorro de energia
 time_t anchoLoop= ANCHO_INTERVALO;//inicialmente desactivado el ahorro de energia
+boolean candado=false; //Candado de configuracion. true implica que la ultima configuracion fue mal
 
 //Contadores
 uint16_t multiplicadorAnchoIntervalo=5;
@@ -89,6 +89,25 @@ void setup()
   Serial.println("*                                                             *");    
   Serial.println("***************************************************************");
 
+  Serial.printf("\n\nInit Ficheros ---------------------------------------------------------------------\n");
+  //Ficheros - Lo primero para poder leer los demas ficheros de configuracion
+  inicializaFicheros(debugGlobal);
+
+  //Compruebo si existe candado, si existe la ultima configuracion fue mal
+  if(existeFichero(FICHERO_CANDADO)) 
+    {
+    Serial.printf("Candado puesto. Configuracion por defecto");
+    candado=true; 
+    debugGlobal=1;
+    }
+  else
+    {
+    candado=false;
+    //Genera candado
+    if(salvaFichero(FICHERO_CANDADO,"","JSD")) Serial.println("Candado creado");
+    else Serial.println("ERROR - No se pudo crear el candado");
+    }
+ 
   //Configuracion general
   Serial.println("Init Config -----------------------------------------------------------------------");
   inicializaConfiguracion(debugGlobal);
@@ -118,6 +137,10 @@ void setup()
   Serial.println("Init Ordenes ----------------------------------------------------------------------");  
   inicializaOrden();//Inicializa los buffers de recepcion de ordenes desde PC
 
+  //Si ha llegado hasta aqui, todo ha ido bien y borro el candado
+  if(borraFichero(FICHERO_CANDADO))Serial.println("Candado borrado");
+  else Serial.println("ERROR - No se pudo borrar el candado");
+  
   Serial.println("***************************************************************");
   Serial.println("*                                                             *");
   Serial.println("*               Fin del setup del modulo                      *");
@@ -179,8 +202,6 @@ boolean inicializaConfiguracion(boolean debug)
   frecuenciaWifiWatchdog=100;  
   
   ahorroEnergia=0; //ahorro de energia desactivado por defecto
-  IPControlador.fromString("0.0.0.0");
-  for(int8_t id=0;id<MAX_SATELITES;id++) IPSatelites[id].fromString("0.0.0.0");  
     
   if(leeFichero(GLOBAL_CONFIG_FILE, cad)) parseaConfiguracionGlobal(cad);
 
@@ -212,56 +233,26 @@ boolean parseaConfiguracionGlobal(String contenido)
     {
     Serial.println("parsed json");
 //******************************Parte especifica del json a leer********************************
-    multiplicadorAnchoIntervalo=json.get<uint16_t>("multiplicadorAnchoIntervalo");
-    anchoIntervalo=json.get<uint16_t>("anchoIntervalo");
-    frecuenciaOTA=json.get<uint16_t>("frecuenciaOTA");
-    frecuenciaLeeSensores=json.get<uint16_t>("frecuenciaLeeSensores");
-    frecuenciaServidorWeb=json.get<uint16_t>("frecuenciaServidorWeb");
-    frecuenciaOrdenes=json.get<uint16_t>("frecuenciaOrdenes");
-    frecuenciaMQTT=json.get<uint16_t>("frecuenciaMQTT");
-    frecuenciaEnviaDatos=json.get<uint16_t>("frecuenciaEnviaDatos");
-    frecuenciaWifiWatchdog=json.get<uint16_t>("frecuenciaWifiWatchdog");  
-    
+    multiplicadorAnchoIntervalo=json.get<uint16_t>("multiplicadorAnchoIntervalo"); if(multiplicadorAnchoIntervalo==0) multiplicadorAnchoIntervalo=5;
+    anchoIntervalo=json.get<uint16_t>("anchoIntervalo");                           if(anchoIntervalo==0) anchoIntervalo=1200;
+    frecuenciaOTA=json.get<uint16_t>("frecuenciaOTA");                             if(frecuenciaOTA==0) frecuenciaOTA=5;
+    frecuenciaLeeSensores=json.get<uint16_t>("frecuenciaLeeSensores");             if(frecuenciaLeeSensores==0) frecuenciaLeeSensores=50;
+    frecuenciaServidorWeb=json.get<uint16_t>("frecuenciaServidorWeb");             if(frecuenciaServidorWeb==0) frecuenciaServidorWeb=1;
+    frecuenciaOrdenes=json.get<uint16_t>("frecuenciaOrdenes");                     if(frecuenciaOrdenes==0) frecuenciaOrdenes=2; 
+    frecuenciaMQTT=json.get<uint16_t>("frecuenciaMQTT");                           if(frecuenciaMQTT==0) frecuenciaMQTT=50;
+    frecuenciaEnviaDatos=json.get<uint16_t>("frecuenciaEnviaDatos");               if(frecuenciaEnviaDatos==0) frecuenciaEnviaDatos=100;
+    frecuenciaWifiWatchdog=json.get<uint16_t>("frecuenciaWifiWatchdog");           if(frecuenciaWifiWatchdog==0) frecuenciaWifiWatchdog=100;
+
     ahorroEnergia=json.get<uint16_t>("ahorroEnergia");
     direccion = json.get<uint16_t>("id"); // "5"
-    IPControlador.fromString(json.get<String>("IPControlador"));
-    IPSatelites[0].fromString(json.get<String>("IPPrimerTermometro"));
-    IPGateway.fromString(json.get<String>("IPGateway"));
-    
-    for(int8_t id=1;id<MAX_SATELITES;id++)
-      {
-      IPSatelites[id]=IPSatelites[id-1];//copio la anterior
-      IPSatelites[id][3]++;//paso a la siguiente
-      }            
-    Serial.printf("Configuracion leida:\ndireccion: %i\nIP controlador: %s\nIP primer satelite: %s\nIP Gateway: %s\nAhorro de energia: %i\n",direccion,IPControlador.toString().c_str(),IPSatelites[0].toString().c_str(),IPGateway.toString().c_str(), ahorroEnergia);
+
+    Serial.printf("Configuracion leida:\ndireccion: %i\nAhorro de energia: %i\n",direccion, ahorroEnergia);
     Serial.printf("\nContadores\nmultiplicadorAnchoIntervalo: %i\nanchoIntervalo: %i\nfrecuenciaOTA: %i\nfrecuenciaLeeSensores: %i\nfrecuenciaServidorWeb: %i\nfrecuenciaOrdenes: %i\nfrecuenciaMQTT: %i\nfrecuenciaEnviaDatos: %i\nfrecuenciaWifiWatchdog: %i\n",multiplicadorAnchoIntervalo, anchoIntervalo, frecuenciaOTA, frecuenciaLeeSensores,frecuenciaServidorWeb, frecuenciaOrdenes, frecuenciaMQTT, frecuenciaEnviaDatos, frecuenciaWifiWatchdog);
 //************************************************************************************************
     }
   }
 
 ///////////////FUNCIONES COMUNES/////////////////////
-/********************************************/
-/*  Genera una cadena con todas las IPs     */
-/********************************************/
-String leerIPs(void)
-  {
-  String cad="";
-
-  for(int8_t i=0;i<MAX_SATELITES;i++)
-    {
-    cad += "IP " + String(i) + ": ";
-    cad += IPSatelites[i][0];
-    cad += ".";
-    cad += IPSatelites[i][1];
-    cad += ".";
-    cad += IPSatelites[i][2];
-    cad += ".";
-    cad += IPSatelites[i][3];
-    cad += "\n";
-    }
-  return cad;
-  }
-
 /*************************************************/
 /*  Dado un long, lo paso a binario y cambio los */
 /*  bits pares. Devuelve el nuevo valor          */ 

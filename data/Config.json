@@ -1,8 +1,5 @@
 {
-"id": "7", 
-"IPControlador": "10.68.0.60",
-"IPPrimerTermometro": "10.68.0.62",
-"IPGateway":"10.68.1.1",
+"id": "10", 
 "ahorroEnergia": 0,
 
 "multiplicadorAnchoIntervalo": 5,
@@ -12,5 +9,6 @@
 "frecuenciaServidorWeb": 1,
 "frecuenciaOrdenes": 2,
 "frecuenciaMQTT": 50,
+"frecuenciaEnviaDatos": 100, 
 "frecuenciaWifiWatchdog": 100 
 }

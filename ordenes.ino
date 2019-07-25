@@ -484,7 +484,7 @@ String generaJsonConfiguracionId(String configActual, String id)
   if(configActual=="") 
     {
     Serial.println("No existe el fichero. Se genera uno nuevo");
-    return "{\"id\": \"" + id + "\", \"IPControlador\": \"10.68.1.60\",\"IPPrimerTermometro\": \"10.68.1.62\",\"IPGateway\":\"10.68.1.1\"}";
+    return "{\"id\": \"" + id + "\", \"ahorroEnergia\": 0,\"multiplicadorAnchoIntervalo\": 5,\"anchoIntervalo\": 100,\"frecuenciaOTA\": 5,\"frecuenciaLeeSensores\": 50,\"frecuenciaServidorWeb\": 1,\"frecuenciaOrdenes\": 2,\"frecuenciaMQTT\": 50,\"frecuenciaEnviaDatos\": 100, \"frecuenciaWifiWatchdog\": 100 }";
     }
     
   DynamicJsonBuffer jsonBuffer;
@@ -496,9 +496,6 @@ String generaJsonConfiguracionId(String configActual, String id)
 
 //******************************Parte especifica del json a leer********************************
     json["id"]=direccion;
-//    json["IPControlador"]=IPControlador.toString().c_str();
-//    json["IPPrimerTermometro"]=IPSatelites[0].toString().c_str();
-//    json["IPGateway"]=IPGateway.toString().c_str();   
 //************************************************************************************************
 
     json.printTo(salida);//pinto el json que he creado
