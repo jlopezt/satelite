@@ -49,6 +49,7 @@
 #define FRECUENCIA_ENVIA_DATOS      100 //cada cuantas vueltas de loop publica el estado en el broker MQTT
 #define FRECUENCIA_WIFI_WATCHDOG    100 //cada cuantas vueltas comprueba si se ha perdido la conexion WiFi
 
+//Includes generales
 #include <FS.h>                   //this needs to be first, or it all crashes and burns...
 #include <TimeLib.h>  // download from: http://www.arduino.cc/playground/Code/Time
 #include <ESP8266WiFi.h>
@@ -250,29 +251,4 @@ boolean parseaConfiguracionGlobal(String contenido)
     Serial.printf("\nContadores\nmultiplicadorAnchoIntervalo: %i\nanchoIntervalo: %i\nfrecuenciaOTA: %i\nfrecuenciaLeeSensores: %i\nfrecuenciaServidorWeb: %i\nfrecuenciaOrdenes: %i\nfrecuenciaMQTT: %i\nfrecuenciaEnviaDatos: %i\nfrecuenciaWifiWatchdog: %i\n",multiplicadorAnchoIntervalo, anchoIntervalo, frecuenciaOTA, frecuenciaLeeSensores,frecuenciaServidorWeb, frecuenciaOrdenes, frecuenciaMQTT, frecuenciaEnviaDatos, frecuenciaWifiWatchdog);
 //************************************************************************************************
     }
-  }
-
-///////////////FUNCIONES COMUNES/////////////////////
-/*************************************************/
-/*  Dado un long, lo paso a binario y cambio los */
-/*  bits pares. Devuelve el nuevo valor          */ 
-/*************************************************/
-int generaId(int id_in)
-  {
-  const long mascara=43690;
-  return (id_in^mascara);
-  }
-
-
-const char* wl_status_to_string(wl_status_t status) {
-  switch (status) {
-    case WL_NO_SHIELD: return "WL_NO_SHIELD";
-    case WL_IDLE_STATUS: return "WL_IDLE_STATUS";
-    case WL_NO_SSID_AVAIL: return "WL_NO_SSID_AVAIL";
-    case WL_SCAN_COMPLETED: return "WL_SCAN_COMPLETED";
-    case WL_CONNECTED: return "WL_CONNECTED";
-    case WL_CONNECT_FAILED: return "WL_CONNECT_FAILED";
-    case WL_CONNECTION_LOST: return "WL_CONNECTION_LOST";
-    case WL_DISCONNECTED: return "WL_DISCONNECTED";
-  }
-}  
+  } 

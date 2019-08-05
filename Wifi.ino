@@ -8,7 +8,6 @@
 //needed for library
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
-//#include <ESP8266WebServer.h>
 #include <DNSServer.h>
 #include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager
 
@@ -70,11 +69,11 @@ boolean recuperaDatosWiFi(boolean debug)
   if (debug) Serial.println("Recupero configuracion de archivo...");
 
   //cargo el valores por defecto
-  wifiIP=(0,0,0,0);
-  wifiGW=(0,0,0,0);
-  wifiNet=(0,0,0,0);
-  wifiDNS1=(0,0,0,0);
-  wifiDNS2=(0,0,0,0);
+  wifiIP=IPAddress(0,0,0,0);
+  wifiGW=IPAddress(0,0,0,0);
+  wifiNet=IPAddress(0,0,0,0);
+  wifiDNS1=IPAddress(0,0,0,0);
+  wifiDNS2=IPAddress(0,0,0,0);
    
   //if(!leeFicheroConfig(WIFI_CONFIG_FILE, cad)) 
   if(!leeFichero(WIFI_CONFIG_FILE, cad)) 
@@ -102,7 +101,7 @@ boolean parseaConfiguracionWifi(String contenido)
     Serial.println("parsed json");
 //******************************Parte especifica del json a leer********************************
     if (json.containsKey("wifiIP_PrimerSatelite")) wifiIP.fromString((const char *)json["wifiIP_PrimerSatelite"]); 
-    if(wifiIP!=(0,0,0,0)) wifiIP[3]+=direccion;  //calculo la IP del satelite en funcion de su direccion
+    if(wifiIP!=IPAddress(0,0,0,0)) wifiIP[3]+=direccion;  //calculo la IP del satelite en funcion de su direccion
     if (json.containsKey("wifiGW")) wifiGW.fromString((const char *)json["wifiGW"]);
     if (json.containsKey("wifiNet")) wifiNet.fromString((const char *)json["wifiNet"]); 
     if (json.containsKey("wifiDNS1")) wifiDNS1.fromString((const char *)json["wifiDNS1"]);
@@ -128,7 +127,7 @@ boolean inicializaWifi(boolean debug)
   if(recuperaDatosWiFi(debug))
     {
     //Configuro la IP fija
-    if (wifiIP!=(0,0,0,0) && wifiGW!=(0,0,0,0))
+    if (wifiIP!=IPAddress(0,0,0,0) && wifiGW!=IPAddress(0,0,0,0))
       {
       Serial.printf("Datos WiFi: IP fija-> %s, GW-> %s, subnet-> %s, DNS1-> %s, DNS2-> %s\n",wifiIP.toString().c_str(), wifiGW.toString().c_str(), wifiNet.toString().c_str(), wifiDNS1.toString().c_str(), wifiDNS2.toString().c_str());
       WiFi.config(wifiIP, wifiGW, wifiNet, wifiDNS1, wifiDNS2);
@@ -195,7 +194,7 @@ boolean conectaAutodetect(boolean debug)
   //wifiManager.setAPCallback(miAPCallback);//llamada cuando se actie el portal de configuracion
   
   //Si se ha configurado IP fija
-  if (wifiIP!=(0,0,0,0)) wifiManager.setSTAStaticIPConfig(wifiIP,wifiGW,wifiNet);//Preparo la IP fija (IPAddress ip, IPAddress gw, IPAddress sn) 
+  if (wifiIP!=IPAddress(0,0,0,0)) wifiManager.setSTAStaticIPConfig(wifiIP,wifiGW,wifiNet);//Preparo la IP fija (IPAddress ip, IPAddress gw, IPAddress sn) 
 
   if (!wifiManager.startConfigPortal(("AP_"+nombre_dispositivo+"_"+direccion).c_str())) 
     {

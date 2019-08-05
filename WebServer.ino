@@ -29,9 +29,9 @@ void inicializaWebServer(void)
   server.on("/luz", handleLuz); //Servicio de temperatura    
   server.on("/medidas", handleMedidas); //Servicio de temperatura
   server.on("/medida", handleMedida); //Servicio de temperatura con respuesta Json
-  server.on("/web", handleWeb); //Servicio de temperatura  
+  server.on("/web", handleWeb); //Servicio de temperatura 
+   
   server.on("/test", handleTest);  //URI de test
-
   server.on("/reset", handleReset);  //URI de test  
   server.on("/restart", handleRestart);  //URI de test
   server.on("/info", handleInfo);  //URI de test
@@ -646,6 +646,13 @@ void handleNotFound()
   server.send(404, "text/html", message);
   }
 
+/*********************************************/
+/*                                           */
+/*  Habilita la edicion y borrado de los     */
+/*  ficheros en el sistema a traves de una   */
+/*  peticion HTTP                            */ 
+/*                                           */
+/*********************************************/ 
 void handleManageFichero(void)
   {
   String nombreFichero="";
