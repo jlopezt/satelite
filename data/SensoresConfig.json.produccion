@@ -1,0 +1,5 @@
+{
+"tipoSensorTemperatura": "DS18B20", 
+"tipoSensorHumedad": "DHT22",
+"tipoSensorLuz": "GL5539"
+}
