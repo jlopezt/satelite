@@ -142,8 +142,7 @@ boolean recuperaDatosSensores(boolean debug)
     //Algo salio mal, confgiguracion por defecto
     Serial.printf("No existe fichero de configuracion de Sensores o esta corrupto\n");
     cad="{\"tipoSensorTemperatura\": \"NULO\", \"tipoSensorHumedad\": \"NULO\",\"tipoSensorLuz\": \"NULO\", \"tipoSensorPresion\": \"NULO\", \"tipoSensorAltitud\": \"NULO\"}";
-    salvaFichero(SENSORES_CONFIG_FILE, SENSORES_CONFIG_BAK_FILE, cad);
-    Serial.printf("Fichero de configuracion de Sensores creado por defecto\n");
+    //if (salvaFichero(SENSORES_CONFIG_FILE, SENSORES_CONFIG_BAK_FILE, cad)) Serial.printf("Fichero de configuracion de Sensores creado por defecto\n");
     }
   return parseaConfiguracionSensores(cad);    
   }  
@@ -416,19 +415,22 @@ String generaJson(void)
   String cad="";
   
   //genero el json con las medidas--> {"id": 1, "temperatura": 22.5, "Humedad": 63, "Luz": 12, "Presion": 1036.2, "Altitud": 645.2}
-  cad = "{\n\t\"id\": ";
+  cad = "{\"titulo\": \"";
+  cad += String(nombre_dispositivo);
+  cad += "\"";
+  cad += ",\"id\": ";
   cad += String(direccion);
-  cad += ",\n\t\"Temperatura\": ";
+  cad += ",\"Temperatura\": ";
   cad += String(getTemperatura(),1);
-  cad += ",\n\t\"Humedad\": ";
+  cad += ",\"Humedad\": ";
   cad += String(getHumedad(),1);
-  cad += ",\n\t\"Luz\": ";
+  cad += ",\"Luz\": ";
   cad += String(getLuz(),1);
-  cad += ",\n\t\"Presion\": ";
-  cad += String(getPresion(),1);
-  cad += ",\n\t\"Altitud\": ";
+  cad += ",\"Altitud\": ";
   cad += String(getAltitud(),1);   
-  cad += "\n}";  
+  cad += ",\"Presion\": ";
+  cad += String(getPresion(),1);
+  cad += "}";  
 
   return cad;
   }

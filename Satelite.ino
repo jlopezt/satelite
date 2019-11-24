@@ -10,7 +10,7 @@
 
 //Defines generales
 #define NOMBRE_FAMILIA "Termometro_Satelite"
-#define VERSION "1.8.0 (ESP8266v2.5.1 OTA|json|MQTT|Cont. dinamicos)" //subred 255.255.0.0 | candado | incializacion de ficheros | gestion de ficheros por web
+#define VERSION "1.8.2 (ESP8266v2.5.1 OTA|json|MQTT|Cont. dinamicos)" //Corregido problema con el json de medidas, no cuenta bien los tabladores o los retornos de carro
 #define SEPARADOR        '|'
 #define SUBSEPARADOR     '#'
 #define KO               -1
@@ -57,7 +57,6 @@
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 #include <ArduinoJson.h>
-#include <WebSocketsServer.h> //Lo pongo aqui porque si lo pongo en su sitio no funciona... https://github.com/Links2004/arduinoWebSockets/issues/356
 
 /*-----------------Variables comunes---------------*/
 String nombre_dispositivo(NOMBRE_FAMILIA);//Nombre del dispositivo, por defecto el de la familia
@@ -90,7 +89,9 @@ void setup()
   Serial.println("*             Inicio del setup del modulo                     *");
   Serial.println("*                                                             *");    
   Serial.println("***************************************************************");
-
+  
+  Serial.printf("\nMotivo del reinicio: %s\n",ESP.getResetReason().c_str());
+  
   Serial.printf("\n\nInit Ficheros ---------------------------------------------------------------------\n");
   //Ficheros - Lo primero para poder leer los demas ficheros de configuracion
   inicializaFicheros(debugGlobal);
@@ -128,9 +129,6 @@ void setup()
     //WebServer
     Serial.println("Init Web --------------------------------------------------------------------------");
     inicializaWebServer();
-    //WebSockets
-    Serial.println("Init Web --------------------------------------------------------------------------");
-    inicializaWebSockets();
     }
   else Serial.println("No se pudo conectar al WiFi");
 
@@ -166,7 +164,6 @@ void  loop()
   if ((vuelta % frecuenciaLeeSensores)==0) leeSensores(debugGlobal); //lee los sensores de distancia
   //Prioridad 3: Interfaces externos de consulta  
   if ((vuelta % frecuenciaServidorWeb)==0) webServer(debugGlobal); //atiende el servidor web
-  if ((vuelta % frecuenciaServidorWeb)==0) atiendeWebSocket(debugGlobal); //atiende el servidor web
   if ((vuelta % frecuenciaMQTT)==0) atiendeMQTT();
   if ((vuelta % frecuenciaEnviaDatos)==0) enviaDatos(debugGlobal);
   if ((vuelta % frecuenciaOrdenes)==0) while(HayOrdenes(debugGlobal)) EjecutaOrdenes(debugGlobal); //Lee ordenes via serie
