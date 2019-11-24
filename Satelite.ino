@@ -10,7 +10,7 @@
 
 //Defines generales
 #define NOMBRE_FAMILIA "Termometro_Satelite"
-#define VERSION "1.8.2 (ESP8266v2.5.1 OTA|json|MQTT|Cont. dinamicos)" //Corregido problema con el json de medidas, no cuenta bien los tabladores o los retornos de carro
+#define VERSION "1.8.0 (ESP8266v2.5.1 OTA|json|MQTT|Cont. dinamicos)" //subred 255.255.0.0 | candado | incializacion de ficheros | gestion de ficheros por web
 #define SEPARADOR        '|'
 #define SUBSEPARADOR     '#'
 #define KO               -1
@@ -89,9 +89,7 @@ void setup()
   Serial.println("*             Inicio del setup del modulo                     *");
   Serial.println("*                                                             *");    
   Serial.println("***************************************************************");
-  
-  Serial.printf("\nMotivo del reinicio: %s\n",ESP.getResetReason().c_str());
-  
+
   Serial.printf("\n\nInit Ficheros ---------------------------------------------------------------------\n");
   //Ficheros - Lo primero para poder leer los demas ficheros de configuracion
   inicializaFicheros(debugGlobal);
@@ -206,16 +204,8 @@ boolean inicializaConfiguracion(boolean debug)
   
   ahorroEnergia=0; //ahorro de energia desactivado por defecto
     
-  if(!leeFicheroConfig(GLOBAL_CONFIG_FILE, cad))
-    {
-    Serial.printf("No existe fichero de configuracion global\n");
-    //config por defecto
-    cad="{\"id\": \"0\", \"ahorroEnergia\": 0,\"multiplicadorAnchoIntervalo\": 5,\"anchoIntervalo\": 100,\"frecuenciaOTA\": 5,\"frecuenciaLeeSensores\": 50,\"frecuenciaServidorWeb\": 1,\"frecuenciaOrdenes\": 2,\"frecuenciaMQTT\": 50,\"frecuenciaEnviaDatos\": 100, \"frecuenciaWifiWatchdog\": 100 }";
-    //salvo la config por defecto
-    if(salvaFicheroConfig(GLOBAL_CONFIG_FILE, GLOBAL_CONFIG_BAK_FILE, cad)) Serial.printf("Fichero de configuracion global creado por defecto\n"); 
-    }  
-  parseaConfiguracionGlobal(cad);
-  
+  if(leeFichero(GLOBAL_CONFIG_FILE, cad)) parseaConfiguracionGlobal(cad);
+
   //Ajusto el ancho del intervalo segun el modo de ahorro de energia  
   if(ahorroEnergia==0) anchoLoop=anchoIntervalo;
   else anchoLoop=multiplicadorAnchoIntervalo*anchoIntervalo;

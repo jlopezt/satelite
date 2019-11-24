@@ -24,10 +24,6 @@
 #define WILL_RETAIN false
 #define WILL_MSG    String("¡"+ID_MQTT+" caido!").c_str()
 
-//definicion del topic ping
-#define TOPIC_PING "ping"
-#define TOPIC_PING_RESPUESTA "ping/respuesta"
-
 //Definicion de variables globales
 IPAddress IPBroker; //IP del bus MQTT
 uint16_t puertoBroker; //Puerto del bus MQTT
@@ -78,15 +74,18 @@ boolean recuperaDatosMQTT(boolean debug)
   topicRoot="";
   publicarEstado=1;//por defecto publico
 
-  if(!leeFicheroConfig(MQTT_CONFIG_FILE, cad))
-    {
-    //Algo salio mal, confgiguracion por defecto
-    Serial.printf("No existe fichero de configuracion MQTT o esta corrupto\n");
-    cad="{\"IPBroker\": \"0.0.0.0\", \"puerto\": 1883, \"timeReconnectMQTT\": 500, \"usuarioMQTT\": \"usuario\", \"passwordMQTT\": \"password\", \"topicRoot\": \"XXX\", \"publicarEstado\": 1}";
-    //if (salvaFichero(MQTT_CONFIG_FILE, MQTT_CONFIG_BAK_FILE, cad)) Serial.printf("Fichero de configuracion MQTT creado por defecto\n");      
-    }
+  if(leeFichero(MQTT_CONFIG_FILE, cad))
+    if(parseaConfiguracionMQTT(cad)) 
+      return true;
 
-  return parseaConfiguracionMQTT(cad);
+  //Algo salio mal, confgiguracion por defecto
+  Serial.printf("No existe fichero de configuracion MQTT o esta corrupto\n");
+  cad="{\"IPBroker\": \"10.68.1.100\", \"puerto\": 1883, \"timeReconnectMQTT\": 500, \"usuarioMQTT\": \"usuario\", \"passwordMQTT\": \"password\", \"topicRoot\": \"casa\", \"publicarEstado\": 1}";
+  salvaFichero(MQTT_CONFIG_FILE, MQTT_CONFIG_BAK_FILE, cad);
+  Serial.printf("Fichero de configuracion MQTT creado por defecto\n");
+  parseaConfiguracionMQTT(cad);
+    
+  return false;
   }  
 
 /*********************************************/
@@ -110,7 +109,7 @@ boolean parseaConfiguracionMQTT(String contenido)
     topicRoot=json.get<String>("topicRoot");
     publicarEstado=json.get<int8_t>("publicarEstado");
 
-    Serial.printf("Configuracion leida:\nIP broker: %s\nIP Puerto del broker: %i\ntimeReconnectMQTT: %i\nUsuario: %s\nPassword: %s\nTopic root: %s\nPublicar estado: %i\n",IPBroker.toString().c_str(),puertoBroker,timeReconnectMQTT,usuarioMQTT.c_str(),passwordMQTT.c_str(),topicRoot.c_str(),publicarEstado);
+    Serial.printf("Configuracion leida:\nIP broker: %s\nIP Puerto del broker: %i\ntimeReconnectMQTT: %i\nUsuario: %s\nPassword: %s\nTopic root: %s\nPublicar estado: %i\n",IPBroker.toString().c_str(),puertoBroker,timeReconnectMQTT, usuarioMQTT.c_str(),passwordMQTT.c_str(),topicRoot.c_str(),publicarEstado);
 //************************************************************************************************
     return true;
     }
@@ -124,74 +123,20 @@ boolean parseaConfiguracionMQTT(String contenido)
 /***************************************************/
 void callbackMQTT(char* topic, byte* payload, unsigned int length)
   {
+  //AQUI NO HAY CALLBACK!!! No recibo nada
   if(debugGlobal) Serial.printf("Entrando en callback: \n Topic: %s\nPayload %s\nLongitud %i\n", topic, payload, length);
   
   /**********compruebo el topic*****************/
   //Identifica si el topic del mensaje es uno de los suscritos (deberia ser siempre que si)
   //Compara el topic recibido con los que tiene suscritos para redirigir a la funcion de gestion correspondiente  
   String cad=String(topic);
-
+/*
   //Para cada topic suscrito...
-  //if(cad.equalsIgnoreCase(topicRoot + <topicSuscrito>)) <funcion de gestion>(topic,payload,length);  
-  if(cad.equalsIgnoreCase(TOPIC_PING)) respondePingMQTT(topic,payload,length);  
+  if(cad.equalsIgnoreCase(topicRoot + <topicSuscrito>)) <funcion de gestion>(topic,payload,length);  
   //elseif(cad.equalsIgnoreCase(topicRoot + <topicSuscrito>)) <funcion de gestion>(topic,payload,length);  
   //Si no machea el topic recibido con los sucritos lo tira (no deberia ocurrir)
   else Serial.printf("topic no reconocido: \ntopic: %s\nroot: %s\n", cad.c_str(),cad.substring(0,cad.indexOf("/")).c_str());   
-  
-  }
-
-/***************************************************/
-/* Funcion que gestiona la respuesta al ping MQTT  */
-/***************************************************/
-void respondePingMQTT(char* topic, byte* payload, unsigned int length)
-  {  
-  char mensaje[length];    
-  int id;  
-  int estado;
-
-  Serial.printf("Recibido mensaje Ping:\ntopic: %s\npayload: %s\nlength: %i\n",topic,payload,length);
-  
-  //copio el payload en la cadena mensaje
-  for(int8_t i=0;i<length;i++) mensaje[i]=payload[i];
-  mensaje[length]=0;//acabo la cadena
-
-  /**********************Leo el JSON***********************/
-  const size_t bufferSize = JSON_OBJECT_SIZE(3) + 50;
-  DynamicJsonBuffer jsonBuffer(bufferSize);     
-  JsonObject& root = jsonBuffer.parseObject(mensaje);
-  if (!root.success()) 
-    {
-    Serial.println("No se pudo parsear el JSON");
-    return; //si el mensaje es incorrecto sale  
-    }
-
-  //Si tiene IP se pregunta por un elemento en concreto. Compruebo si soy yo.
-  if (root.containsKey("IP")) 
-    {
-    if (String(root["IP"].as<char*>())!=getIP(false)) return;
-    }
-
-  //SI no tenia IP o si tenia la mia, respondo
-  String T=TOPIC_PING_RESPUESTA;
-  String P= generaJSONPing(false).c_str();
-  Serial.printf("Topic: %s\nPayload: %s\n",T.c_str(),P.c_str());
-  Serial.printf("Resultado: %i\n", clienteMQTT.publish(T.c_str(),P.c_str()));   
-  /**********************Fin JSON***********************/    
-  }
-
-String generaJSONPing(boolean debug)  
-  {
-  String cad="";
-
-  cad += "{";
-  cad += "\"myIP\": \"" + getIP(false) + "\",";
-  cad += "\"ID_MQTT\": \"" + ID_MQTT + "\",";
-  cad += "\"IPBbroker\": \"" + IPBroker.toString() + "\",";
-  cad += "\"IPPuertoBroker\":" + String(puertoBroker) + "";
-  cad += "}";
-
-  if (debug) Serial.printf("Respuesta al ping MQTT: \n%s\n",cad.c_str());
-  return cad;
+*/  
   }
 
 /********************************************/
@@ -202,37 +147,28 @@ boolean conectaMQTT(void)
   {
   int8_t intentos=0;
   String topic;
-
-  if(IPBroker==IPAddress(0,0,0,0)) 
-    {
-    if(debugGlobal) Serial.println("IP del broker = 0.0.0.0, no se intenta conectar.");
-    return (false);//SI la IP del Broker es 0.0.0.0 (IP por defecto) no intentaq conectar y sale con error
-    }
   
   while (!clienteMQTT.connected()) 
     {    
     if(debugGlobal) Serial.println("No conectado, intentando conectar.");
   
     // Attempt to connect
-    Serial.printf("Parametros MQTT:\nID_MQTT: %s\nusuarioMQTT: %s\npasswordMQTT: %s\nWILL_TOPIC: %s\nWILL_QOS: %i\nWILL_RETAIN: %i\nWILL_MSG: %s\nCLEAN_SESSION: %i\n",ID_MQTT.c_str(),usuarioMQTT.c_str(),passwordMQTT.c_str(),(topicRoot+"/"+String(WILL_TOPIC)).c_str(), WILL_QOS, WILL_RETAIN,String(WILL_MSG).c_str(),CLEAN_SESSION);
-   
-    //boolean connect(const char* id, const char* user, const char* pass, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage, boolean cleanSession);
+    //boolean connect(const char* id, const char* user, const char* pass, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage, boolean cleanSession);    
     if (clienteMQTT.connect(ID_MQTT.c_str(), usuarioMQTT.c_str(), passwordMQTT.c_str(), (topicRoot+"/"+String(WILL_TOPIC)).c_str(), WILL_QOS, WILL_RETAIN, String(WILL_MSG).c_str(), CLEAN_SESSION))
       {
       if(debugGlobal) Serial.println("conectado");
-
+/*
       //Suscripcion a todos los topics que aplican a este componente
       //topicOrdenes: topic en el que el controlador publica las ordenes
-      //topic=topicRoot + <topic suscrito>;
-      topic=TOPIC_PING; //Suscripcion al topic de ping
+      topic=topicRoot + <topic suscrito>;
       if (clienteMQTT.subscribe(topic.c_str())) Serial.printf("Subscrito al topic %s\n", topic.c_str());
-      else Serial.printf("Error al subscribirse al topic %s\n", topic.c_str());
-
+      else Serial.printf("Error al subscribirse al topic %s\n", topic.c_str());       
+*/
       return(true);
       }
 
     if(debugGlobal) Serial.printf("Error al conectar al broker. Estado: %s\n",stateTexto().c_str());
-    if(intentos++>=2) return (false);
+    if(intentos++>3) return (false);
     delay(timeReconnectMQTT);      
     }
   }
@@ -253,7 +189,7 @@ boolean enviarMQTT(String topic, String payload)
     if(!topic.startsWith("/")) topic = "/" + topic;  
     topic=topicRoot + topic;
 
-    //Serial.printf("Enviando:\ntopic:  %s | payload: (%i) %s\n",topic.c_str(),payload.length(),payload.c_str());
+	//Serial.printf("Enviando:\ntopic:  %s | payload: (%i) %s\n",topic.c_str(),payload.length(),payload.c_str());
   
     if(clienteMQTT.beginPublish(topic.c_str(), payload.length(), false))//boolean beginPublish(const char* topic, unsigned int plength, boolean retained)
       {
