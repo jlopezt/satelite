@@ -5,33 +5,45 @@
 /*                                                   */
 /*****************************************************/
 
-#define MAX_INTENTOS_MEDIDA 5  //Numero de intentos maximos de leer del Dallas
-#define HDC_DIRECCION_I2C 0x40 //Direccion I2C del HDC1080
+#define MAX_INTENTOS_MEDIDA    5  //Numero de intentos maximos de leer del Dallas
+#define HDC_DIRECCION_I2C    0x40 //Direccion I2C del HDC1080
+#define BME280_DIRECCION_I2C 0x76 //Direccion I2C del HDC1080
+#define SEALEVELPRESSURE_HPA 1024 //Presion a nivel del mar
+
 //Tipos de sensores
 #define TIPO_NULO    "NULO"
 #define TIPO_HDC1080 "HDC1080"
 #define TIPO_DS18B20 "DS18B20"
 #define TIPO_DHT22   "DHT22"
 #define TIPO_GL5539  "GL5539"
+#define TIPO_BME280  "BME280"
 
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <DHT.h>
 #include <ClosedCube_HDC1080.h>
+#include <Adafruit_BME280.h>
+#include <Adafruit_Sensor.h>
 
 // Declaracion de variables de los sensores
 DHT dht(DHTPIN, DHT22);
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature DS18B20(&oneWire);
 ClosedCube_HDC1080 hdc1080;
+Adafruit_BME280 bme280; // I2C
 
 String tipoSensorTemperatura;
 String tipoSensorHumedad;
 String tipoSensorLuz;
+String tipoSensorPresion;
+//String tipoSensorAltitud; //No es necesario, porque si hay es porque hay presion
+
 String nombres[MAX_SATELITES]; //nombre por defecto de los satelites
 float tempC=-100; //se declara global 
 float humedad=-1;
 float luz=-1;
+float presion=-1;
+float altitud=-1;
 
 void inicializaSensores(void)
   {
@@ -43,12 +55,19 @@ void inicializaSensores(void)
   if(tipoSensorTemperatura==TIPO_NULO);
   else if(tipoSensorTemperatura==TIPO_HDC1080) hdc1080.begin(HDC_DIRECCION_I2C); //I2C Temperatura y Humedad HDC1080
   else if(tipoSensorTemperatura==TIPO_DS18B20) DS18B20.begin(); //Temperatura Dallas DS18B20
+  else if(tipoSensorTemperatura==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Temperatura bme280
   //Humedad
   if(tipoSensorHumedad==TIPO_NULO);
   else if(tipoSensorHumedad==TIPO_HDC1080) hdc1080.begin(HDC_DIRECCION_I2C); //I2C Temperatura y Humedad HDC1080
   else if(tipoSensorHumedad==TIPO_DHT22  ) dht.begin();                      //Humedad DHT22
+  else if(tipoSensorHumedad==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Humedad bme280
   //Luz
   //No es necesaria la inicialización
+  //Presion
+  if(tipoSensorPresion==TIPO_NULO);
+  else if(tipoSensorPresion==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Humedad bme280
+  //Altitud
+  //No es necesaria la inicialización, si hay es porque hay presion
   
   //preconfiguracion de fabrica de las habitaciones
   //0 Salon
@@ -101,19 +120,31 @@ boolean recuperaDatosSensores(boolean debug)
   tipoSensorTemperatura="NULO";
   tipoSensorHumedad="NULO";
   tipoSensorLuz="NULO";
-
+  tipoSensorPresion="NULO";
+  //tipoSensorAltitud="NULO";
+  
+/*  
   if(leeFichero(SENSORES_CONFIG_FILE, cad))
     if(parseaConfiguracionSensores(cad)) 
       return true;
 
   //Algo salio mal, confgiguracion por defecto
   Serial.printf("No existe fichero de configuracion de Sensores o esta corrupto\n");
-  cad="{\"tipoSensorTemperatura\": \"NULO\", \"tipoSensorHumedad\": \"NULO\",\"tipoSensorLuz\": \"NULO\"}";
+  cad="{\"tipoSensorTemperatura\": \"NULO\", \"tipoSensorHumedad\": \"NULO\",\"tipoSensorLuz\": \"NULO\", \"tipoSensorPresion\": \"NULO\", \"tipoSensorAltitud\": \"NULO\"}";
   salvaFichero(SENSORES_CONFIG_FILE, SENSORES_CONFIG_BAK_FILE, cad);
   Serial.printf("Fichero de configuracion de Sensores creado por defecto\n");
   parseaConfiguracionSensores(cad);
-    
+
   return false;
+*/
+  if(!leeFicheroConfig(SENSORES_CONFIG_FILE, cad))
+    {
+    //Algo salio mal, confgiguracion por defecto
+    Serial.printf("No existe fichero de configuracion de Sensores o esta corrupto\n");
+    cad="{\"tipoSensorTemperatura\": \"NULO\", \"tipoSensorHumedad\": \"NULO\",\"tipoSensorLuz\": \"NULO\", \"tipoSensorPresion\": \"NULO\", \"tipoSensorAltitud\": \"NULO\"}";
+    //if (salvaFichero(SENSORES_CONFIG_FILE, SENSORES_CONFIG_BAK_FILE, cad)) Serial.printf("Fichero de configuracion de Sensores creado por defecto\n");
+    }
+  return parseaConfiguracionSensores(cad);    
   }  
 
 /*********************************************/
@@ -132,8 +163,9 @@ boolean parseaConfiguracionSensores(String contenido)
     tipoSensorTemperatura=json.get<String>("tipoSensorTemperatura");
     tipoSensorHumedad=json.get<String>("tipoSensorHumedad");
     tipoSensorLuz=json.get<String>("tipoSensorLuz");
+    tipoSensorPresion=json.get<String>("tipoSensorPresion");
 
-    Serial.printf("Configuracion leida:\ntipo sensor temperatura: %s\ntipo sensor humedad: %s\ntipo sensor luz: %s\n",tipoSensorTemperatura.c_str(),tipoSensorHumedad.c_str(),tipoSensorLuz.c_str());
+    Serial.printf("Configuracion leida:\ntipo sensor temperatura: %s\ntipo sensor humedad: %s\ntipo sensor luz: %s\ntipo sensor presion: %s\n",tipoSensorTemperatura.c_str(),tipoSensorHumedad.c_str(),tipoSensorLuz.c_str(),tipoSensorPresion.c_str());
 //************************************************************************************************
     return true;
     }
@@ -152,13 +184,18 @@ void leeSensores(int8_t debug)
   if(tipoSensorTemperatura==TIPO_NULO);
   else if(tipoSensorTemperatura==TIPO_HDC1080) leeTemperaturaHDC1080(); //I2C Temperatura HDC1080
   else if(tipoSensorTemperatura==TIPO_DS18B20) leeTemperaturaDS18B20(); //Temperatura Dallas DS18B20
+  else if(tipoSensorTemperatura==TIPO_BME280 ) leeTemperaturaBME280(); //Temperatura BME280
   //Humedad
   if(tipoSensorHumedad==TIPO_NULO);
   else if(tipoSensorHumedad==TIPO_HDC1080) leeHumedadHDC1080(); //I2C Temperatura y Humedad HDC1080
-  else if(tipoSensorHumedad==TIPO_DHT22  ) leeHumedadDHT22();                      //Humedad DHT22
+  else if(tipoSensorHumedad==TIPO_DHT22  ) leeHumedadDHT22();   //Humedad DHT22
+  else if(tipoSensorHumedad==TIPO_BME280 ) leeHumedadBME280();  //Temperatura BME280
   //Luz
   if(tipoSensorLuz==TIPO_NULO);
   else if(tipoSensorLuz==TIPO_GL5539) leeLuzGL5539(); //I2C Temperatura y Humedad HDC1080
+  //Presion
+  if(tipoSensorPresion==TIPO_NULO);
+  else if(tipoSensorPresion==TIPO_BME280) leePresionBME280(); //I2C Temperatura y Humedad HDC1080
 
   if(debug)Serial.printf("T: %s; H: %s, L: %s\n",getTemperaturaString().c_str(),getHumedadString().c_str(),getLuzString().c_str());
   }
@@ -219,6 +256,15 @@ void leeTemperaturaHDC1080(void)
   }
   
 /**************************************/
+/* Lee el sensor de Tª BME280         */
+/* y almnacena el valor leido         */
+/**************************************/
+void leeTemperaturaBME280(void)
+  { 
+  tempC = bme280.readTemperature();  
+  }
+
+/**************************************/
 /* Lee el sensor de Humedad           */
 /* y almnacena el valor leido         */
 /**************************************/
@@ -241,6 +287,15 @@ void leeHumedadHDC1080(void)
   }
 
 /**************************************/
+/* Lee el sensor de Humedad BME280    */
+/* y almnacena el valor leido         */
+/**************************************/
+void leeHumedadBME280(void)
+  { 
+  humedad = bme280.readHumidity();
+  }
+
+/**************************************/
 /* Lee el sensor de luz GL5539        */
 /* y almnacena el valor leido         */
 /**************************************/
@@ -250,6 +305,16 @@ void leeLuzGL5539(void)
   luz=(analogRead(LDR_PIN)*100/1024);//valor entre 0 y 100. 100 luz intensa 0 oscuridad
   }
   
+/**************************************/
+/* Lee el sensor de Presion BME280    */
+/* y almnacena el valor leido         */
+/**************************************/
+void leePresionBME280(void)
+  { 
+  presion = bme280.readPressure()/100.0;
+  altitud = bme280.readAltitude(SEALEVELPRESSURE_HPA);
+  }
+
 /**************************************/
 /* Publica el valor de la Tª medida   */
 /**************************************/
@@ -270,6 +335,22 @@ float getHumedad(void)  //encapsula el acceso a la humedad
 float getLuz(void)  //encapsula el acceso a la luz
   {
   return luz;  
+  }
+
+/******************************************/
+/* Publica el valor de la presion medida  */
+/******************************************/
+float getPresion(void)  //encapsula el acceso a la presion
+  {
+  return presion;  
+  }
+
+/******************************************/
+/* Publica el valor de la altitud medida  */
+/******************************************/
+float getAltitud(void)  //encapsula el acceso a la altitud
+  {
+  return altitud;  
   }
 
 /**************************************/
@@ -304,6 +385,27 @@ String getLuzString(void)  //encapsula el acceso a la luz
   return String(salida);
   }
 
+/******************************************/
+/* Publica el valor de la presion medida  */
+/******************************************/
+String getPresionString(void)  //encapsula el acceso a la presion
+  {
+  char salida[7];//"-999.9
+  dtostrf(presion, 2, 1, salida);  
+
+  return String(salida);
+  }
+
+/******************************************/
+/* Publica el valor de la altitud medida  */
+/******************************************/
+String getAltitudString(void)  //encapsula el acceso a la altitud
+  {
+  char salida[7];//"-999.9
+  dtostrf(presion, 2, 1, salida);  
+
+  return String(salida);
+  }
 
 /***************************************/
 /* Genera el json con las medidas      */
@@ -312,16 +414,23 @@ String generaJson(void)
   {
   String cad="";
   
-  //genero el json con las medidas--> {"temperatura": 22.5,"Humedad": 63,"Luz": 12}
-  cad  = "{\n\t\"Temperatura\": ";
+  //genero el json con las medidas--> {"id": 1, "temperatura": 22.5, "Humedad": 63, "Luz": 12, "Presion": 1036.2, "Altitud": 645.2}
+  cad = "{\"titulo\": \"";
+  cad += String(nombre_dispositivo);
+  cad += "\"";
+  cad += ",\"id\": ";
+  cad += String(direccion);
+  cad += ",\"Temperatura\": ";
   cad += String(getTemperatura(),1);
-  cad += ",\n\t\"Humedad\": ";
+  cad += ",\"Humedad\": ";
   cad += String(getHumedad(),1);
-  cad += ",\n\t\"Luz\": ";
+  cad += ",\"Luz\": ";
   cad += String(getLuz(),1);
-  cad += ",\n\t\"id\": ";
-  cad += String(direccion);   
-  cad += "\n}";  
+  cad += ",\"Altitud\": ";
+  cad += String(getAltitud(),1);   
+  cad += ",\"Presion\": ";
+  cad += String(getPresion(),1);
+  cad += "}";  
 
   return cad;
   }
@@ -341,4 +450,5 @@ String generaJsonEstado(void)
 void setTemp(float f) {tempC=f;}
 void setHum(float f) {humedad=f;}
 void setLuz(float f) {luz=f;}
-  
+void setPresion(float f) {presion=f;}
+void setAltitud(float f) {altitud=f;}  

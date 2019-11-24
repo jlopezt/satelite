@@ -1,2 +1,4 @@
 #excluye los .bak
 *.bak
+data/AA_DESARROLLO
+data/AA_PRODUCCION

@@ -216,7 +216,11 @@ void inicializaOrden(void)
   comandos[i].comando="mqtt";
   comandos[i].descripcion="Configuración de MQTT";
   comandos[i++].p_func_comando=func_comando_mqtt;
-    
+
+  comandos[i].comando="eraseConfig";
+  comandos[i].descripcion="Borrado de configuracion en flash";
+  comandos[i++].p_func_comando=func_comando_eraseConfig;
+
   //resto
   for(;i<MAX_COMANDOS;)
     {
@@ -471,6 +475,12 @@ void func_comando_contadores(int iParametro, char* sParametro, float fParametro)
 void func_comando_mqtt(int iParametro, char* sParametro, float fParametro)//"debug")
   {
   Serial.printf("Configuracion leida:\nID MQTT: %s\nIP broker: %s\nIP Puerto del broker: %i\ntimeReconnectMQTT: %i\nUsuario: %s\nPassword: %s\nTopic root: %s\nWill topic: %s\nWill msg: %s\nClean session: %i\n", ID_MQTT.c_str(), IPBroker.toString().c_str(), puertoBroker, timeReconnectMQTT, usuarioMQTT.c_str(),passwordMQTT.c_str(),topicRoot.c_str(),(topicRoot+"/"+String(WILL_TOPIC)).c_str(),String(WILL_MSG).c_str(), CLEAN_SESSION);
+  }  
+
+void func_comando_eraseConfig(int iParametro, char* sParametro, float fParametro)//"debug")
+  {
+  if(ESP.eraseConfig()) Serial.printf("Configuracion borrada correctamente.\n");
+  else Serial.printf("Error al borrar la configuracion.\n");
   }  
   
 /**********************************************************************/
