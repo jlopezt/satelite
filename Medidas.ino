@@ -9,6 +9,7 @@
 #define HDC_DIRECCION_I2C    0x40 //Direccion I2C del HDC1080
 #define BME280_DIRECCION_I2C 0x76 //Direccion I2C del HDC1080
 #define SEALEVELPRESSURE_HPA 1024 //Presion a nivel del mar
+#define BH1750_FONDO_ESCALA  3800 //Fondo de escala del sensor BH1750
 
 //Tipos de sensores
 #define TIPO_NULO    "NULO"
@@ -17,6 +18,7 @@
 #define TIPO_DHT22   "DHT22"
 #define TIPO_GL5539  "GL5539"
 #define TIPO_BME280  "BME280"
+#define TIPO_BH1750  "BH1750"
 
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -24,6 +26,7 @@
 #include <ClosedCube_HDC1080.h>
 #include <Adafruit_BME280.h>
 #include <Adafruit_Sensor.h>
+#include <BH1750.h>
 
 // Declaracion de variables de los sensores
 DHT dht(DHTPIN, DHT22);
@@ -31,6 +34,8 @@ OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature DS18B20(&oneWire);
 ClosedCube_HDC1080 hdc1080;
 Adafruit_BME280 bme280; // I2C
+BH1750 bh1750; //I2C direccion por defecto 0x23
+
 
 String tipoSensorTemperatura;
 String tipoSensorHumedad;
@@ -63,6 +68,9 @@ void inicializaSensores(void)
   else if(tipoSensorHumedad==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Humedad bme280
   //Luz
   //No es necesaria la inicialización
+  if(tipoSensorLuz==TIPO_NULO);
+  else if(tipoSensorLuz==TIPO_GL5539); //LDR, no se inicializa. Lectura analogica
+  else if(tipoSensorLuz==TIPO_BH1750) bh1750.begin(BH1750::CONTINUOUS_LOW_RES_MODE ); //I2C luz bh1750
   //Presion
   if(tipoSensorPresion==TIPO_NULO);
   else if(tipoSensorPresion==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Humedad bme280
@@ -123,20 +131,6 @@ boolean recuperaDatosSensores(boolean debug)
   tipoSensorPresion="NULO";
   //tipoSensorAltitud="NULO";
   
-/*  
-  if(leeFichero(SENSORES_CONFIG_FILE, cad))
-    if(parseaConfiguracionSensores(cad)) 
-      return true;
-
-  //Algo salio mal, confgiguracion por defecto
-  Serial.printf("No existe fichero de configuracion de Sensores o esta corrupto\n");
-  cad="{\"tipoSensorTemperatura\": \"NULO\", \"tipoSensorHumedad\": \"NULO\",\"tipoSensorLuz\": \"NULO\", \"tipoSensorPresion\": \"NULO\", \"tipoSensorAltitud\": \"NULO\"}";
-  salvaFichero(SENSORES_CONFIG_FILE, SENSORES_CONFIG_BAK_FILE, cad);
-  Serial.printf("Fichero de configuracion de Sensores creado por defecto\n");
-  parseaConfiguracionSensores(cad);
-
-  return false;
-*/
   if(!leeFicheroConfig(SENSORES_CONFIG_FILE, cad))
     {
     //Algo salio mal, confgiguracion por defecto
@@ -192,7 +186,8 @@ void leeSensores(int8_t debug)
   else if(tipoSensorHumedad==TIPO_BME280 ) leeHumedadBME280();  //Temperatura BME280
   //Luz
   if(tipoSensorLuz==TIPO_NULO);
-  else if(tipoSensorLuz==TIPO_GL5539) leeLuzGL5539(); //I2C Temperatura y Humedad HDC1080
+  else if(tipoSensorLuz==TIPO_GL5539) leeLuzGL5539(); //LDR
+  else if(tipoSensorLuz==TIPO_BH1750) leeLuzBH1750(); //I2C Luz BH1750
   //Presion
   if(tipoSensorPresion==TIPO_NULO);
   else if(tipoSensorPresion==TIPO_BME280) leePresionBME280(); //I2C Temperatura y Humedad HDC1080
@@ -298,6 +293,8 @@ void leeHumedadBME280(void)
 /**************************************/
 /* Lee el sensor de luz GL5539        */
 /* y almnacena el valor leido         */
+/* valor entre 0 y 100.               */
+/* 100 luz intensa 0 oscuridad        */
 /**************************************/
 void leeLuzGL5539(void)
   { 
@@ -305,6 +302,20 @@ void leeLuzGL5539(void)
   luz=(analogRead(LDR_PIN)*100/1024);//valor entre 0 y 100. 100 luz intensa 0 oscuridad
   }
   
+/*****************************************/
+/* Lee el sensor de luz GY-302 - BH1750 */
+/* y almnacena el valor leido           */
+/* valor entre 0 y 100.                 */
+/* 100 luz intensa 0 oscuridad          */
+/****************************************/
+void leeLuzBH1750(void)
+  { 
+  // Lee el valor desde el sensor
+  luz = bh1750.readLightLevel()*100.0/BH1750_FONDO_ESCALA;//fondo de escala tomo BH1750_FONDO_ESCALA, es aun mayor pero eso es mucha luz. responde entre 0 y 100
+  if(luz>100) luz=100; //si es mayor topo 100
+  //valor entre 0 y 100. 100 luz intensa 0 oscuridad
+  }
+
 /**************************************/
 /* Lee el sensor de Presion BME280    */
 /* y almnacena el valor leido         */
