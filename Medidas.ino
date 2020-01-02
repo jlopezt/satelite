@@ -13,12 +13,12 @@
 
 //Tipos de sensores
 #define TIPO_NULO    "NULO"
-#define TIPO_HDC1080 "HDC1080"
-#define TIPO_DS18B20 "DS18B20"
-#define TIPO_DHT22   "DHT22"
-#define TIPO_GL5539  "GL5539"
-#define TIPO_BME280  "BME280"
-#define TIPO_BH1750  "BH1750"
+#define TIPO_DS18B20 "DS18B20"  //Temperatura
+#define TIPO_HDC1080 "HDC1080"  //Temperatura, Humedad
+#define TIPO_DHT22   "DHT22"    //Temperatura, Humedad
+#define TIPO_BME280  "BME280"   //Temperatura, Humedad
+#define TIPO_GL5539  "GL5539"   //Luz
+#define TIPO_BH1750  "BH1750"   //Luz
 
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -58,8 +58,9 @@ void inicializaSensores(void)
   //Inicializo los sensores ¿TODOS?
   //Temperatura
   if(tipoSensorTemperatura==TIPO_NULO);
-  else if(tipoSensorTemperatura==TIPO_HDC1080) hdc1080.begin(HDC_DIRECCION_I2C); //I2C Temperatura y Humedad HDC1080
-  else if(tipoSensorTemperatura==TIPO_DS18B20) DS18B20.begin(); //Temperatura Dallas DS18B20
+  else if(tipoSensorHumedad==TIPO_DHT22  ) dht.begin();                           //Temperatura y Humedad DHT22
+  else if(tipoSensorTemperatura==TIPO_HDC1080) hdc1080.begin(HDC_DIRECCION_I2C);  //I2C Temperatura y Humedad HDC1080
+  else if(tipoSensorTemperatura==TIPO_DS18B20) DS18B20.begin();                   //Temperatura Dallas DS18B20
   else if(tipoSensorTemperatura==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Temperatura bme280
   //Humedad
   if(tipoSensorHumedad==TIPO_NULO);
@@ -176,6 +177,7 @@ void leeSensores(int8_t debug)
   //Leo los sensores  
   //Temperatura
   if(tipoSensorTemperatura==TIPO_NULO);
+  else if(tipoSensorHumedad==TIPO_DHT22  ) leeTemperaturaDHT22();       //Humedad DHT22
   else if(tipoSensorTemperatura==TIPO_HDC1080) leeTemperaturaHDC1080(); //I2C Temperatura HDC1080
   else if(tipoSensorTemperatura==TIPO_DS18B20) leeTemperaturaDS18B20(); //Temperatura Dallas DS18B20
   else if(tipoSensorTemperatura==TIPO_BME280 ) leeTemperaturaBME280(); //Temperatura BME280
@@ -196,35 +198,6 @@ void leeSensores(int8_t debug)
   }
 
 /**************************************/
-/* Lee los sensores de Tª y           */
-/* almnacena los valores leidos       */
-/**************************************/
-void xleeTemperatura(void)
-  { 
-  leeTemperaturaDS18B20();
-  leeTemperaturaHDC1080();
-  }
-  
-/**************************************/
-/* Lee los sensores de humedad y      */
-/* almnacena los valores leidos       */
-/**************************************/
-void xleeHumedad(void)
-  { 
-  leeHumedadDHT22();
-  leeHumedadHDC1080();
-  }
-  
-/**************************************/
-/* Lee el sensor de luz               */
-/* y almnacena el valor leido         */
-/**************************************/
-void xleeLuz(void)
-  { 
-  leeLuzGL5539();
-  }
-  
-/**************************************/
 /* Lee el sensor de Tª DS18B20        */
 /* y almnacena el valor leido         */
 /**************************************/
@@ -239,6 +212,19 @@ void leeTemperaturaDS18B20(void)
     if(tempC != 85.0 && tempC != (-127.0)) break;
     delay(100);
     } while (i++<MAX_INTENTOS_MEDIDA);
+  }
+
+
+/**************************************/
+/* Lee el sensor de Tª DTH22          */
+/* y almnacena el valor leido         */
+/**************************************/
+void leeTemperaturaDHT22(void)
+  {
+  float t;
+  
+  t = dht.readTemperature();  //leo el sensor
+  if(!isnan(t)) tempC=t;  //si no es nan lo guardo
   }
   
 /**************************************/
