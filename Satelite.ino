@@ -10,7 +10,7 @@
 
 //Defines generales
 #define NOMBRE_FAMILIA "Termometro_Satelite"
-#define VERSION "1.8.4 (ESP8266v2.6.3 OTA|json|MQTT|Cont. dinamicos|WebSockets)" //Corregido problema con el json de medidas, no cuenta bien los tabladores o los retornos de carro
+#define VERSION "1.8.5 (ESP8266v2.6.3 OTA|json|MQTT|Cont. dinamicos|WebSockets)" //Corregido problema con el json de medidas, no cuenta bien los tabladores o los retornos de carro
 #define SEPARADOR        '|'
 #define SUBSEPARADOR     '#'
 #define KO               -1

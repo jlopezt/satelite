@@ -1,5 +1,5 @@
 {
-"id": "9", 
+"id": "10", 
 "ahorroEnergia": 0,
 
 "multiplicadorAnchoIntervalo": 5,
@@ -12,3 +12,4 @@
 "frecuenciaEnviaDatos": 100, 
 "frecuenciaWifiWatchdog": 100 
 }
+
