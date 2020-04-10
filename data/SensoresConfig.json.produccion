@@ -1,5 +1,5 @@
 {
-"tipoSensorTemperatura": "DS18B20", 
-"tipoSensorHumedad": "DHT22",
-"tipoSensorLuz": "GL5539"
+"tipoSensorTemperatura": "HDC1080", 
+"tipoSensorHumedad": "HDC1080",
+"tipoSensorLuz": "BH1750"
 }

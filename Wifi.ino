@@ -26,6 +26,7 @@ IPAddress wifiDNS2(0, 0, 0, 0);
 
 const char* ssid;
 const char* password;
+int connection_time_out=TIME_OUT; //time out de conexion a la multibase
 
 ESP8266WiFiMulti WiFiMulti;
 
@@ -68,20 +69,12 @@ boolean recuperaDatosWiFi(boolean debug)
   String cad="";
   if (debug) Serial.println("Recupero configuracion de archivo...");
 
-  //cargo el valores por defecto
-  wifiIP=IPAddress(0,0,0,0);
-  wifiGW=IPAddress(0,0,0,0);
-  wifiNet=IPAddress(0,0,0,0);
-  wifiDNS1=IPAddress(0,0,0,0);
-  wifiDNS2=IPAddress(0,0,0,0);
-   
-  //if(!leeFicheroConfig(WIFI_CONFIG_FILE, cad)) 
   if(!leeFichero(WIFI_CONFIG_FILE, cad)) 
     {
     //Confgiguracion por defecto
     Serial.printf("No existe fichero de configuracion WiFi\n");
     //cad="{\"wifi\": [ {\"ssid\": \"BASE0\" ,\"password\": \"11223344556677889900abcdef\"}, {\"ssid\": \"BASE1\" ,\"password\": \"11223344556677889900abcdef\"}, {\"ssid\": \"BASE2\" ,\"password\": \"11223344556677889900abcdef\"}, {\"ssid\": \"BASE-1\",\"password\": \"11223344556677889900abcdef\"}]}";
-    cad="{\"wifiIP_PrimerSatelite\": \"0.0.0.0\",\"wifiGW\":\"0.0.0.0\",\"wifiNet\": \"0.0.0.0\",\"wifiDNS1\":\"0.0.0.0\",\"wifiDNS2\": \"0.0.0.0\",\"wifi\": []}";
+    cad="{\"wifiIP\": \"0.0.0.0\",\"wifiGW\":\"0.0.0.0\",\"wifiNet\": \"0.0.0.0\",\"wifiDNS1\": \"0.0.0.0\",\"wifiDNS2\": \"0.0.0.0\",\"timeOut\": 15000,\"wifi\": [{\"ssid\": \"BASE1\" ,\"password\": \"11223344556677889900abcdef\"}]}";
     //if(salvaFicheroConfig(WIFI_CONFIG_FILE, WIFI_CONFIG_BAK_FILE, cad)) Serial.printf("Fichero de configuracion WiFi creado por defecto\n");
     }
 
@@ -107,7 +100,9 @@ boolean parseaConfiguracionWifi(String contenido)
     if (json.containsKey("wifiDNS1")) wifiDNS1.fromString((const char *)json["wifiDNS1"]);
     if (json.containsKey("wifiDNS2")) wifiDNS2.fromString((const char *)json["wifiDNS2"]);
     
-    Serial.printf("Configuracion leida:\nIP satelite: %s\nIP Gateway: %s\nIPSubred: %s\nIP DNS1: %s\nIP DNS2: %s\n",wifiIP.toString().c_str(),wifiGW.toString().c_str(),wifiNet.toString().c_str(),wifiDNS1.toString().c_str(),wifiDNS2.toString().c_str());    
+    if (json.containsKey("timeOut")) connection_time_out=json.get<int>("timeOut");
+    
+    Serial.printf("Configuracion leida:\nIP satelite: %s\nIP Gateway: %s\nIPSubred: %s\nIP DNS1: %s\nIP DNS2: %s\nTime-out: %i\n",wifiIP.toString().c_str(),wifiGW.toString().c_str(),wifiNet.toString().c_str(),wifiDNS1.toString().c_str(),wifiDNS2.toString().c_str(),connection_time_out);    
     
     JsonArray& wifi = json["wifi"];
     for(uint8_t i=0;i<wifi.size();i++)
@@ -125,6 +120,13 @@ boolean parseaConfiguracionWifi(String contenido)
 
 boolean inicializaWifi(boolean debug)
   {
+  //cargo el valores por defecto
+  wifiIP=IPAddress(0,0,0,0);
+  wifiGW=IPAddress(0,0,0,0);
+  wifiNet=IPAddress(0,0,0,0);
+  wifiDNS1=IPAddress(0,0,0,0);
+  wifiDNS2=IPAddress(0,0,0,0);
+   
   //Desconecto si esta conectado
   WiFi.disconnect(true);//(false);   
   //No reconecta a la ultima WiFi que se conecto
@@ -236,7 +238,7 @@ boolean conectaMultibase(boolean debug)
     Serial.println("(Multi) Conectando Wifi...");  
     delay(DELAY);  
     time_out += DELAY;
-    if (time_out>TIME_OUT) 
+    if (time_out>connection_time_out)//TIME_OUT)
       {
       if (debug) Serial.println("No se pudo conectar al Wifi...");    
       return FALSE; //No se ha conectado y sale con KO
