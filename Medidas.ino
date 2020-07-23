@@ -132,7 +132,7 @@ boolean recuperaDatosSensores(boolean debug)
   tipoSensorPresion="NULO";
   //tipoSensorAltitud="NULO";
   
-  if(!leeFicheroConfig(SENSORES_CONFIG_FILE, cad))
+  if(!leeFichero(SENSORES_CONFIG_FILE, cad))
     {
     //Algo salio mal, confgiguracion por defecto
     Serial.printf("No existe fichero de configuracion de Sensores o esta corrupto\n");

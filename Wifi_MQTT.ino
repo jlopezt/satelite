@@ -78,7 +78,7 @@ boolean recuperaDatosMQTT(boolean debug)
   topicRoot="";
   publicarEstado=1;//por defecto publico
 
-  if(!leeFicheroConfig(MQTT_CONFIG_FILE, cad))
+  if(!leeFichero(MQTT_CONFIG_FILE, cad))
     {
     //Algo salio mal, confgiguracion por defecto
     Serial.printf("No existe fichero de configuracion MQTT o esta corrupto\n");

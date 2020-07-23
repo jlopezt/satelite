@@ -1,5 +1,10 @@
 {
+"xtipoSensorTemperatura": "DS18B20", 
 "tipoSensorTemperatura": "HDC1080", 
+
+"xtipoSensorHumedad": "DHT22",
 "tipoSensorHumedad": "HDC1080",
-"tipoSensorLuz": "BH1750"
+
+"xtipoSensorLuz": "BH1750",
+"tipoSensorLuz": "GL5539"
 }

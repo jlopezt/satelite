@@ -8,9 +8,10 @@
  * Servicio web levantado en puerto ZZZ
  */
 
+/***************************** Defines *****************************/
 //Defines generales
 #define NOMBRE_FAMILIA "Termometro_Satelite"
-#define VERSION "1.8.5 (ESP8266v2.6.3 OTA|json|MQTT|Cont. dinamicos|WebSockets)" //Corregido problema con el json de medidas, no cuenta bien los tabladores o los retornos de carro
+#define VERSION "1.8.6 (ESP8266v2.6.3 OTA|json|MQTT|Cont. dinamicos|WebSockets)" //Corregido problema con el json de medidas, no cuenta bien los tabladores o los retornos de carro
 #define SEPARADOR        '|'
 #define SUBSEPARADOR     '#'
 #define KO               -1
@@ -22,7 +23,6 @@
 #define POLLING_TIME_OUT 60000 //Milisegundos transcurridos entre dos peticiones del controlador antes de intentar registrarse
 
 //Nombres de ficheros
-#define FICHERO_CANDADO            "/Candado"
 #define GLOBAL_CONFIG_FILE         "/Config.json"
 #define GLOBAL_CONFIG_BAK_FILE     "/Config.json.bak"
 #define SENSORES_CONFIG_FILE       "/SensoresConfig.json"
@@ -49,6 +49,10 @@
 #define FRECUENCIA_ENVIA_DATOS      100 //cada cuantas vueltas de loop publica el estado en el broker MQTT
 #define FRECUENCIA_WIFI_WATCHDOG    100 //cada cuantas vueltas comprueba si se ha perdido la conexion WiFi
 
+//#define LED_BUILTIN                2 //GPIO del led de la placa en los ESP32   
+/***************************** Defines *****************************/
+
+/***************************** Includes *****************************/
 //Includes generales
 #include <FS.h>                   //this needs to be first, or it all crashes and burns...
 #include <TimeLib.h>  // download from: http://www.arduino.cc/playground/Code/Time
@@ -58,6 +62,7 @@
 #include <ArduinoOTA.h>
 #include <ArduinoJson.h>
 #include <WebSocketsServer.h> //Lo pongo aqui porque si lo pongo en su sitio no funciona... https://github.com/Links2004/arduinoWebSockets/issues/356
+/***************************** Includes *****************************/
 
 /*-----------------Variables comunes---------------*/
 String nombre_dispositivo(NOMBRE_FAMILIA);//Nombre del dispositivo, por defecto el de la familia
@@ -66,7 +71,6 @@ uint16_t vuelta = MAX_VUELTAS-100;//0; //vueltas de loop
 int debugGlobal=0; //por defecto desabilitado
 uint8_t ahorroEnergia=0;//inicialmente desactivado el ahorro de energia
 time_t anchoLoop= ANCHO_INTERVALO;//inicialmente desactivado el ahorro de energia
-boolean candado=false; //Candado de configuracion. true implica que la ultima configuracion fue mal
 
 //Contadores
 uint16_t multiplicadorAnchoIntervalo=5;
@@ -79,9 +83,26 @@ uint16_t frecuenciaMQTT=50;
 uint16_t frecuenciaEnviaDatos=100;
 uint16_t frecuenciaWifiWatchdog=100;
 
+/************************* FUNCIONES PARA EL BUITIN LED ***************************/
+void configuraLed(void){pinMode(LED_BUILTIN, OUTPUT);}
+void enciendeLed(void){digitalWrite(LED_BUILTIN, LOW);}//En esp8266 es al reves que en esp32
+void apagaLed(void){digitalWrite(LED_BUILTIN, HIGH);}//En esp8266 es al reves que en esp32
+void parpadeaLed(uint8_t veces, uint16_t espera=100)
+  {
+  for(uint8_t i=0;i<2*veces;i++)
+    {
+    delay(espera/2);
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    }
+  }
+/***********************************************************************************/  
+
 void setup()
   {
   Serial.begin(115200);
+  configuraLed();
+  enciendeLed();
+    
   Serial.printf("\n\n\n");
   Serial.printf("*************** %s ***************\n",NOMBRE_FAMILIA);
   Serial.printf("*************** %s ***************\n",VERSION);
@@ -96,45 +117,39 @@ void setup()
   Serial.printf("\n\nInit Ficheros ---------------------------------------------------------------------\n");
   //Ficheros - Lo primero para poder leer los demas ficheros de configuracion
   inicializaFicheros(debugGlobal);
+  apagaLed();
 
-  //Compruebo si existe candado, si existe la ultima configuracion fue mal
-  if(existeFichero(FICHERO_CANDADO)) 
-    {
-    Serial.printf("Candado puesto. Configuracion por defecto");
-    candado=true; 
-    debugGlobal=1;
-    }
-  else
-    {
-    candado=false;
-    //Genera candado
-    if(salvaFichero(FICHERO_CANDADO,"","JSD")) Serial.println("Candado creado");
-    else Serial.println("ERROR - No se pudo crear el candado");
-    }
- 
   //Configuracion general
   Serial.println("Init Config -----------------------------------------------------------------------");
   inicializaConfiguracion(debugGlobal);
+  parpadeaLed(1);
 
   //Wifi
   Serial.println("Init WiFi -----------------------------------------------------------------------");
   if (inicializaWifi(true))//debugGlobal)) No tien esentido debugGlobal, no hay manera de activarlo
     {
+    parpadeaLed(5,200);
+
     /*----------------Inicializaciones que necesitan red-------------*/
     //OTA
     Serial.println("Init OTA -----------------------------------------------------------------------");
     inicializaOTA(debugGlobal);
+    parpadeaLed(1);
     //MQTT
     Serial.println("Init MQTT -----------------------------------------------------------------------");
     inicializaMQTT();
+    parpadeaLed(2);
     //WebServer
     Serial.println("Init Web ------------------------------------------------------------------------");
     inicializaWebServer();
+    parpadeaLed(3);
     //WebSockets
     Serial.println("Init Web ------------------------------------------------------------------------");
     inicializaWebSockets();
+    parpadeaLed(4);    
     }
   else Serial.println("No se pudo conectar al WiFi");
+  apagaLed();
 
   //Sensores
   Serial.println("Init sensores ---------------------------------------------------------------------");
@@ -144,9 +159,8 @@ void setup()
   Serial.println("Init Ordenes ----------------------------------------------------------------------");  
   inicializaOrden();//Inicializa los buffers de recepcion de ordenes desde PC
 
-  //Si ha llegado hasta aqui, todo ha ido bien y borro el candado
-  if(borraFichero(FICHERO_CANDADO))Serial.println("Candado borrado");
-  else Serial.println("ERROR - No se pudo borrar el candado");
+  parpadeaLed(2);
+  apagaLed();//Por si acaso....
   
   Serial.println("***************************************************************");
   Serial.println("*                                                             *");
@@ -211,13 +225,13 @@ boolean inicializaConfiguracion(boolean debug)
   
   ahorroEnergia=0; //ahorro de energia desactivado por defecto
     
-  if(!leeFicheroConfig(GLOBAL_CONFIG_FILE, cad))
+  if(!leeFichero(GLOBAL_CONFIG_FILE, cad))
     {
     Serial.printf("No existe fichero de configuracion global\n");
     //config por defecto
     cad="{\"id\": \"0\", \"ahorroEnergia\": 0,\"multiplicadorAnchoIntervalo\": 5,\"anchoIntervalo\": 100,\"frecuenciaOTA\": 5,\"frecuenciaLeeSensores\": 50,\"frecuenciaServidorWeb\": 1,\"frecuenciaOrdenes\": 2,\"frecuenciaMQTT\": 50,\"frecuenciaEnviaDatos\": 100, \"frecuenciaWifiWatchdog\": 100 }";
     //salvo la config por defecto
-    if(salvaFicheroConfig(GLOBAL_CONFIG_FILE, GLOBAL_CONFIG_BAK_FILE, cad)) Serial.printf("Fichero de configuracion global creado por defecto\n"); 
+    if(salvaFichero(GLOBAL_CONFIG_FILE, GLOBAL_CONFIG_BAK_FILE, cad)) Serial.printf("Fichero de configuracion global creado por defecto\n"); 
     }  
   parseaConfiguracionGlobal(cad);
   
