@@ -103,7 +103,11 @@ boolean recuperaDatosWiFi(boolean debug)
   wifiDNS2=IPAddress(0,0,0,0);
   mDNS=NOMBRE_mDNS_CONFIG;
    
-  if(!leeFichero(WIFI_CONFIG_FILE, cad)) Serial.printf("No existe fichero de configuracion WiFi o no es valido\n");//Confgiguracion por defecto
+  if(!leeFichero(WIFI_CONFIG_FILE, cad)) 
+    {
+    Serial.printf("No existe fichero de configuracion WiFi o no es valido\n");//Confgiguracion por defecto
+    return false;//NUEVO
+    }
 
   return(parseaConfiguracionWifi(cad));
   }

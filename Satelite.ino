@@ -11,7 +11,7 @@
 /***************************** Defines *****************************/
 //Defines generales
 #define NOMBRE_FAMILIA "Termometro_Satelite"
-#define VERSION "1.8.6 (ESP8266v2.6.3 OTA|json|MQTT|Cont. dinamicos|WebSockets)" //Corregido problema con el json de medidas, no cuenta bien los tabladores o los retornos de carro
+#define VERSION "1.8.7 (ESP8266v2.7.4 OTA|json|MQTT|Cont. dinamicos|WebSockets)" //Actualizada version de tarjeta y corregido problema con la configuracion por defecto en el arranque
 #define SEPARADOR        '|'
 #define SUBSEPARADOR     '#'
 #define KO               -1
@@ -215,6 +215,7 @@ boolean inicializaConfiguracion(boolean debug)
   //Contadores
   multiplicadorAnchoIntervalo=5;
   anchoIntervalo=1200;
+  anchoLoop=anchoIntervalo;
   frecuenciaOTA=5;
   frecuenciaLeeSensores=50;
   frecuenciaServidorWeb=1;
@@ -227,12 +228,10 @@ boolean inicializaConfiguracion(boolean debug)
     
   if(!leeFichero(GLOBAL_CONFIG_FILE, cad))
     {
-    Serial.printf("No existe fichero de configuracion global\n");
-    //config por defecto
-    cad="{\"id\": \"0\", \"ahorroEnergia\": 0,\"multiplicadorAnchoIntervalo\": 5,\"anchoIntervalo\": 100,\"frecuenciaOTA\": 5,\"frecuenciaLeeSensores\": 50,\"frecuenciaServidorWeb\": 1,\"frecuenciaOrdenes\": 2,\"frecuenciaMQTT\": 50,\"frecuenciaEnviaDatos\": 100, \"frecuenciaWifiWatchdog\": 100 }";
-    //salvo la config por defecto
-    if(salvaFichero(GLOBAL_CONFIG_FILE, GLOBAL_CONFIG_BAK_FILE, cad)) Serial.printf("Fichero de configuracion global creado por defecto\n"); 
+    Serial.printf("No existe fichero de configuracion global\n");    
+    return false;
     }  
+    
   parseaConfiguracionGlobal(cad);
   
   //Ajusto el ancho del intervalo segun el modo de ahorro de energia  

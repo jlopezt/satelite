@@ -52,31 +52,11 @@ float altitud=-1;
 
 void inicializaSensores(void)
   {
-  //recupero datos del fichero de configuracion
-  if (!recuperaDatosSensores(false)) Serial.printf("error al recuperar config de los sensores.\nConfiguracion por defecto.\n");
-
-  //Inicializo los sensores ¿TODOS?
-  //Temperatura
-  if(tipoSensorTemperatura==TIPO_NULO);
-  else if(tipoSensorHumedad==TIPO_DHT22  ) dht.begin();                           //Temperatura y Humedad DHT22
-  else if(tipoSensorTemperatura==TIPO_HDC1080) hdc1080.begin(HDC_DIRECCION_I2C);  //I2C Temperatura y Humedad HDC1080
-  else if(tipoSensorTemperatura==TIPO_DS18B20) DS18B20.begin();                   //Temperatura Dallas DS18B20
-  else if(tipoSensorTemperatura==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Temperatura bme280
-  //Humedad
-  if(tipoSensorHumedad==TIPO_NULO);
-  else if(tipoSensorHumedad==TIPO_HDC1080) hdc1080.begin(HDC_DIRECCION_I2C); //I2C Temperatura y Humedad HDC1080
-  else if(tipoSensorHumedad==TIPO_DHT22  ) dht.begin();                      //Humedad DHT22
-  else if(tipoSensorHumedad==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Humedad bme280
-  //Luz
-  //No es necesaria la inicialización
-  if(tipoSensorLuz==TIPO_NULO);
-  else if(tipoSensorLuz==TIPO_GL5539); //LDR, no se inicializa. Lectura analogica
-  else if(tipoSensorLuz==TIPO_BH1750) bh1750.begin(BH1750::CONTINUOUS_LOW_RES_MODE ); //I2C luz bh1750
-  //Presion
-  if(tipoSensorPresion==TIPO_NULO);
-  else if(tipoSensorPresion==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Humedad bme280
-  //Altitud
-  //No es necesaria la inicialización, si hay es porque hay presion
+  //Valores pòr defecto
+  tipoSensorTemperatura=TIPO_NULO;
+  tipoSensorHumedad=TIPO_NULO;
+  tipoSensorLuz=TIPO_NULO;
+  tipoSensorPresion=TIPO_NULO;
   
   //preconfiguracion de fabrica de las habitaciones
   //0 Salon
@@ -112,6 +92,36 @@ void inicializaSensores(void)
   //15 Buhardilla
   nombres[15]="Buhardilla2";  
 
+  //recupero datos del fichero de configuracion
+  if (!recuperaDatosSensores(false)) 
+    {
+    Serial.printf("error al recuperar config de los sensores.\nConfiguracion por defecto.\n");
+    return;
+    }
+
+  //Inicializo los sensores ¿TODOS?
+  //Temperatura
+  if(tipoSensorTemperatura==TIPO_NULO);
+  else if(tipoSensorHumedad==TIPO_DHT22  ) dht.begin();                           //Temperatura y Humedad DHT22
+  else if(tipoSensorTemperatura==TIPO_HDC1080) hdc1080.begin(HDC_DIRECCION_I2C);  //I2C Temperatura y Humedad HDC1080
+  else if(tipoSensorTemperatura==TIPO_DS18B20) DS18B20.begin();                   //Temperatura Dallas DS18B20
+  else if(tipoSensorTemperatura==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Temperatura bme280
+  //Humedad
+  if(tipoSensorHumedad==TIPO_NULO);
+  else if(tipoSensorHumedad==TIPO_HDC1080) hdc1080.begin(HDC_DIRECCION_I2C); //I2C Temperatura y Humedad HDC1080
+  else if(tipoSensorHumedad==TIPO_DHT22  ) dht.begin();                      //Humedad DHT22
+  else if(tipoSensorHumedad==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Humedad bme280
+  //Luz
+  //No es necesaria la inicialización
+  if(tipoSensorLuz==TIPO_NULO);
+  else if(tipoSensorLuz==TIPO_GL5539); //LDR, no se inicializa. Lectura analogica
+  else if(tipoSensorLuz==TIPO_BH1750) bh1750.begin(BH1750::CONTINUOUS_LOW_RES_MODE ); //I2C luz bh1750
+  //Presion
+  if(tipoSensorPresion==TIPO_NULO);
+  else if(tipoSensorPresion==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Humedad bme280
+  //Altitud
+  //No es necesaria la inicialización, si hay es porque hay presion
+  
   //Variables medidas  
   leeSensores(debugGlobal);
   }
@@ -136,9 +146,9 @@ boolean recuperaDatosSensores(boolean debug)
     {
     //Algo salio mal, confgiguracion por defecto
     Serial.printf("No existe fichero de configuracion de Sensores o esta corrupto\n");
-    cad="{\"tipoSensorTemperatura\": \"NULO\", \"tipoSensorHumedad\": \"NULO\",\"tipoSensorLuz\": \"NULO\", \"tipoSensorPresion\": \"NULO\", \"tipoSensorAltitud\": \"NULO\"}";
-    //if (salvaFichero(SENSORES_CONFIG_FILE, SENSORES_CONFIG_BAK_FILE, cad)) Serial.printf("Fichero de configuracion de Sensores creado por defecto\n");
+    return false;
     }
+    
   return parseaConfiguracionSensores(cad);    
   }  
 
