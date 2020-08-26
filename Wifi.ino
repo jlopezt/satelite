@@ -42,7 +42,7 @@ boolean inicializamDNS(const char *nombre)
   {  
   String mDNSnombre;
   
-  if(nombre==NULL) mDNSnombre=mDNS;
+  if(nombre==NULL) mDNSnombre=NOMBRE_mDNS_CONFIG;//mDNS;
   else mDNSnombre=nombre;
   
   if (MDNS.begin(mDNSnombre.c_str()))
@@ -186,7 +186,7 @@ boolean inicializaWifi(boolean debug)
       else Serial.println("No hay IP fija");
 
       //Inicializo mDNS para localizar el dispositivo
-      inicializamDNS(nombre_dispositivo.c_str());
+      inicializamDNS(mDNS.c_str());//nombre_dispositivo.c_str());
   
       Serial.println("------------------------WiFi conectada (configuracion almacenada)--------------------------------------");
       Serial.println("WiFi conectada");
@@ -253,7 +253,7 @@ boolean conectaAutodetect(boolean debug)
   //if (wifiIP!=IPAddress(0,0,0,0)) wifiManager.setSTAStaticIPConfig(wifiIP,wifiGW,wifiNet);//Preparo la IP fija (IPAddress ip, IPAddress gw, IPAddress sn) 
 
   //Inicializo mDNS para localizar la base
-  inicializamDNS(NOMBRE_mDNS_CONFIG);
+  inicializamDNS(NULL);//NOMBRE_mDNS_CONFIG);
   
   if (!wifiManager.startConfigPortal(NOMBRE_AP)) Serial.println("Error al conectar. Salida por time-out\n");      
   else 
