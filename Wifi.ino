@@ -94,15 +94,6 @@ boolean recuperaDatosWiFi(boolean debug)
   String cad="";
   if (debug) Serial.println("Recupero configuracion de archivo...");
 
-  //cargo el valores por defecto
-  wifiIPPrimerSatelite=IPAddress(0,0,0,0);
-  wifiIP=IPAddress(0,0,0,0);
-  wifiGW=IPAddress(0,0,0,0);
-  wifiNet=IPAddress(0,0,0,0);
-  wifiDNS1=IPAddress(0,0,0,0);
-  wifiDNS2=IPAddress(0,0,0,0);
-  mDNS=NOMBRE_mDNS_CONFIG;
-   
   if(!leeFichero(WIFI_CONFIG_FILE, cad)) 
     {
     Serial.printf("No existe fichero de configuracion WiFi o no es valido\n");//Confgiguracion por defecto
@@ -140,7 +131,7 @@ boolean parseaConfiguracionWifi(String contenido)
     if (json.containsKey("wifiDNS2")) wifiDNS2.fromString((const char *)json["wifiDNS2"]);
     if (json.containsKey("mDNS")) mDNS=String((const char *)json["mDNS"]);
     
-    Serial.printf("Configuracion leida:\nmDNS: %s\nIP actuador: %s\nIP Gateway: %s\nIPSubred: %s\nIP DNS1: %s\nIP DNS2: %s\n",mDNS.c_str(),wifiIP.toString().c_str(),wifiGW.toString().c_str(),wifiNet.toString().c_str(),wifiDNS1.toString().c_str(),wifiDNS2.toString().c_str());    
+    Serial.printf("Configuracion leida:\nmDNS: %s\nIP sateite: %s\nIP Gateway: %s\nIPSubred: %s\nIP DNS1: %s\nIP DNS2: %s\n",mDNS.c_str(),wifiIP.toString().c_str(),wifiGW.toString().c_str(),wifiNet.toString().c_str(),wifiDNS1.toString().c_str(),wifiDNS2.toString().c_str());    
 
     if (!json.containsKey("wifi")) return false;
 
@@ -162,6 +153,15 @@ boolean parseaConfiguracionWifi(String contenido)
 
 boolean inicializaWifi(boolean debug)
   {
+  //cargo el valores por defecto
+  wifiIPPrimerSatelite=IPAddress(0,0,0,0);
+  wifiIP=IPAddress(0,0,0,0);
+  wifiGW=IPAddress(0,0,0,0);
+  wifiNet=IPAddress(0,0,0,0);
+  wifiDNS1=IPAddress(0,0,0,0);
+  wifiDNS2=IPAddress(0,0,0,0);
+  mDNS=NOMBRE_mDNS_CONFIG;
+   
   //Desconecto si esta conectado
   WiFi.disconnect(true);//(false);   
   //No reconecta a la ultima WiFi que se conecto

@@ -9,7 +9,8 @@ Web de valores medidos                      http://IPSatelite/web          N/A  
 Servicio de test                            http://IPSatelite/test         N/A             HTML                                 Devuelve un texto html para verificar conectividad desde navegador                               http://IPSatelite/test 
 ************************************************************************************************/
 //enum HTTPMethod { HTTP_ANY, HTTP_GET, HTTP_POST, HTTP_PUT, HTTP_PATCH, HTTP_DELETE, HTTP_OPTIONS };
-#define IDENTIFICACION "Modulo " + String(direccion) + " Habitacion= " + nombres[direccion] + "<BR>"
+//#define MODULO "Modulo " + String(direccion) + " Habitacion= " + nombres[direccion] + "<BR>"
+#define IDENTIFICACION "Version " + String(VERSION) + "." + "<BR>"
 
 #include <ESP8266WebServer.h>
 //#include <ESP8266mDNS.h>
@@ -17,32 +18,32 @@ Servicio de test                            http://IPSatelite/test         N/A  
 
 ESP8266WebServer server(PUERTO_WEBSERVER);
 
-String cabeceraHTML="<HTML><HEAD><TITLE>" + nombre_dispositivo + " </TITLE></HEAD><BODY><h1><a href=\"../\" target=\"_self\">" + nombre_dispositivo + "</a><br></h1>";
+String cabeceraHTML="<!DOCTYPE html><HTML><HEAD><TITLE>" + nombre_dispositivo + " </TITLE></HEAD><BODY><h1><a href=\"../\" target=\"_self\">" + nombre_dispositivo + "</a><br></h1>";
 String enlaces="<TABLE>\n<CAPTION>Enlaces</CAPTION>\n<TR><TD><a href=\"info\" target=\"_self\">Info</a></TD></TR>\n<TR><TD><a href=\"test\" target=\"_self\">Test</a></TD></TR>\n<TR><TD><a href=\"restart\" target=\"_self\">Restart</a></TD></TR>\n<TR><TD><a href=\"listaFicheros\" target=\"_self\">Lista ficheros</a></TD></TR>\n</TABLE>"; 
 String pieHTML="</BODY></HTML>";
 
 void inicializaWebServer(void)
   {
   //decalra las URIs a las que va a responder
-  server.on("/", handleRoot); //web de temperatura
-  server.on("/temperatura", handleTemperatura); //Servicio de temperatura
-  server.on("/humedad", handleHumedad); //Servicio de temperatura
-  server.on("/luz", handleLuz); //Servicio de temperatura    
-  server.on("/medidas", handleMedidas); //Servicio de temperatura
-  server.on("/medida", handleMedida); //Servicio de temperatura con respuesta Json
-  server.on("/web", handleWeb); //Servicio de temperatura 
+  server.on("/", HTTP_ANY, handleRoot); //web de temperatura
+  server.on("/temperatura", HTTP_ANY, handleTemperatura); //Servicio de temperatura
+  server.on("/humedad", HTTP_ANY, handleHumedad); //Servicio de temperatura
+  server.on("/luz", HTTP_ANY, handleLuz); //Servicio de temperatura    
+  server.on("/medidas", HTTP_ANY, handleMedidas); //Servicio de temperatura
+  server.on("/medida", HTTP_ANY, handleMedida); //Servicio de temperatura con respuesta Json
+  server.on("/web", HTTP_ANY, handleWeb); //Servicio de temperatura 
    
-  server.on("/test", handleTest);  //URI de test
-  server.on("/reset", handleReset);  //URI de test  
-  server.on("/restart", handleRestart);  //URI de test
-  server.on("/info", handleInfo);  //URI de test
+  server.on("/test", HTTP_ANY, handleTest);  //URI de test
+  server.on("/reset", HTTP_ANY, handleReset);  //URI de test  
+  server.on("/restart", HTTP_ANY, handleRestart);  //URI de test
+  server.on("/info", HTTP_ANY, handleInfo);  //URI de test
   
   server.on("/listaFicheros", HTTP_ANY, handleListaFicheros);  //URI de leer fichero
-  server.on("/creaFichero", handleCreaFichero);  //URI de crear fichero
-  server.on("/borraFichero", handleBorraFichero);  //URI de borrar fichero
-  server.on("/leeFichero", handleLeeFichero);  //URI de leer fichero
+  server.on("/creaFichero", HTTP_ANY, handleCreaFichero);  //URI de crear fichero
+  server.on("/borraFichero", HTTP_ANY, handleBorraFichero);  //URI de borrar fichero
+  server.on("/leeFichero", HTTP_ANY, handleLeeFichero);  //URI de leer fichero
   server.on("/manageFichero", HTTP_ANY, handleManageFichero);  //URI de leer fichero  
-  server.on("/infoFS", handleInfoFS);  //URI de info del FS
+  server.on("/infoFS", HTTP_ANY, handleInfoFS);  //URI de info del FS
 
   server.on("/edit.html",  HTTP_POST, []() {  // If a POST request is sent to the /edit.html address,
     server.send(200, "text/plain", ""); 
@@ -64,41 +65,28 @@ void handleRoot()
   String cad="";
 
   cad += cabeceraHTML;
+  cad += "Modulo " + String(direccion) + " Habitacion= " + nombres[direccion] + "<BR>";
   //genero la respuesta por defecto
-  cad += "Modulo satelite. Version ";
-  cad += VERSION;
-  cad += "<BR>";
-  cad += IDENTIFICACION;
 
 /***********************************/
+  cad += "<h1>Temperatura: ";
+  cad += String(getTemperatura(),1);
+  cad += "&deg; </h1>";
+  cad += "<h1>Humedad: ";
+  cad += String(getHumedad(),1);
+  cad += "% </h1>";
+  cad += "<h1>Luz: ";
+  cad += String(getLuz(),1);
+  cad += "</h1>";
 
-  cad += "Valores medidos: ";
-  cad += generaJson();
-
-/***********************************/
   cad +="<BR><BR>";
-  cad += "<table>";  
-  cad += "<tr><td>Servicio</td><td>URL</td><td>Formato entrada</td><td>Formato salida</td><td>Comentario</td><td>Ejemplo peticion</td><td>Ejemplo respuesta</td></tr>";
-  cad += "<tr><td>Informacion</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/"">http://" + String(getIP(debugGlobal)) + "</a></td><td>N/A</td><td>N/A</td><td>Nombre del modulo y version</td><td>http://" + String(getIP(debugGlobal)) + "</td><td>N/A</td></tr>";
-  cad += "<tr><td>Consulta de valores temperatura</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/temperatura"">http://" + String(getIP(debugGlobal)) + "/temperatura</a></td><td>N/A</td><td>{""Temperatura"": $valor$}</td><td>json con la temperatura leida</td><td>http://" + String(getIP(debugGlobal)) + "/temperatura</td><td>{""Temperatura"": 24.3}</td></tr>";
-  cad += "<tr><td>Consulta de valores humedad</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/humedad"">http://" + String(getIP(debugGlobal)) + "/humedad</a></td><td>N/A</td><td>{""Hunmedad"": $valor$}</td><td>json con la humedad leida</td><td>http://" + String(getIP(debugGlobal)) + "/humedad</td><td>{""Humedad"": 24.3}</td></tr>";
-  cad += "<tr><td>Consulta de valores luz</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/luz"">http://" + String(getIP(debugGlobal)) + "/luz</a></td><td>N/A</td><td>{""Luz"": $valor$}</td><td>json con la luz leida</td><td>http://" + String(getIP(debugGlobal)) + "/luz</td><td>{""Luz"": 24.3}</td></tr>";
-
-  cad += "<tr><td>Consulta de valores medidos</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/medidas"">http://" + String(getIP(debugGlobal)) + "/medidas</a></td><td>N/A</td><td>$temp$|$hum$|$luz$|</td><td>Devuelve los valores medidos en formato texto</td><td>http://" + String(getIP(debugGlobal)) + "/medidas</td><td>0|0</td></tr>";    
-  cad += "<tr><td>Consulta de valores medidos (json)</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/medida""> http://" + String(getIP(debugGlobal)) + "/medida </a></td><td>N/A</td><td>{""Temperatura"": $valor$,""Humedad"": $valor$,""Luz"": $valor$,""id"": 0}</td><td>Devuelve los valores medidos en formato json</td><td>http://" + String(getIP(debugGlobal)) + "/medida</td><td>{""Temperatura"": 24.4,""Humedad"": 34.9,""Luz"": 37.0,""id"": 0}</td></tr>";    
-  
-  cad += "<tr><td>Web de valores medidos</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/web"">http://" + String(getIP(debugGlobal)) + "/web</a></td><td>N/A</td><td>HTML</td><td>Devuelve una pagina web para la consulta desde navegador</td><td>http://" + String(getIP(debugGlobal)) + "/web</td><td></td></tr>";    
-  cad += "<tr><td>Test</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/test"">http://" + String(getIP(debugGlobal)) + "/test</a></td><td>N/A</td><td>HTML</td><td>Verifica el estado del Actuador</td></tr>";   
-  cad += "<tr><td>Reinicia el controlador</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/restart"">http://" + String(getIP(debugGlobal)) + "/restart</a></td><td>N/A</td><td>N/A</td><td>Reinicia el modulo</td></tr>";
-  
-  cad += "<tr><td>Informacion del Hw del sistema</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/info"">http://" + String(getIP(debugGlobal)) + "/info</a></td><td>N/A</td><td>HTML</td><td>Informacion del Hw del modulo</td></tr>";
-  cad += "</table>";
-  cad +="<BR><BR>";
-/***********************************/
   
   cad += enlaces;
   cad += "<BR>";
   cad += "vueltas= " + String(vuelta) + " / " + String(UINT16_MAX);
+  cad += "<BR><BR>";
+  cad += IDENTIFICACION;
+
   cad += pieHTML;
   
   server.send(200, "text/html", cad);
@@ -341,6 +329,21 @@ void handleInfo(void)
   cad += cabeceraHTML;
   cad += IDENTIFICACION;
 
+  cad += "<BR>----------------- uptime --------------------<BR>";
+  unsigned long milis=millis();
+
+  cad += "uptime (ms): " + String(milis);
+  cad += "<BR>";
+
+  int8_t segundos=(milis/1000)%60;
+  int8_t minutos=(milis/60000)%60;
+  int8_t horas=milis/3600000;
+
+  char horaText[9]="";
+  sprintf(horaText,"%02i:%02i:%02i",horas,minutos,segundos);
+  cad += String(horaText);
+  cad += "<BR>---------------------------------------------<BR>";
+
   cad += "<BR>-----------------info logica-----------------<BR>";
   cad += "IP: " + String(getIP(debugGlobal));
   cad += "<BR>";  
@@ -498,7 +501,12 @@ void handleCreaFichero(void)
     nombreFichero=server.arg("nombre");
     contenidoFichero=server.arg("contenido");
 
-    if(salvaFichero( nombreFichero, nombreFichero+".bak", contenidoFichero)) cad += "Fichero salvado con exito<br>";
+    if(salvaFichero( nombreFichero, nombreFichero+".bak", contenidoFichero)) 
+    {
+    //cad += "Fichero salvado con exito<br>";
+    handleListaFicheros();
+    return;
+    }    
     else cad += "No se pudo salvar el fichero<br>"; 
     }
   else cad += "Falta el argumento <nombre de fichero>"; 
@@ -526,7 +534,12 @@ void handleBorraFichero(void)
     {
     nombreFichero=server.arg("nombre");
 
-    if(borraFichero(nombreFichero)) cad += "El fichero " + nombreFichero + " ha sido borrado.\n";
+    if(borraFichero(nombreFichero)) 
+      {
+      //cad += "El fichero " + nombreFichero + " ha sido borrado.\n";
+      handleListaFicheros();
+      return;
+      }
     else cad += "No sepudo borrar el fichero " + nombreFichero + ".\n"; 
     }
   else cad += "Falta el argumento <nombre de fichero>"; 
@@ -580,9 +593,8 @@ void handleLeeFichero(void)
 /*********************************************/  
 void handleInfoFS(void)
   {
-  String cad="";
-
-  cad += cabeceraHTML;
+  String cad=cabeceraHTML;
+  
   cad += IDENTIFICACION;
   
   //inicializo el sistema de ficheros
