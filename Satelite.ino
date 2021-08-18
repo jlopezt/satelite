@@ -11,7 +11,7 @@
 /***************************** Defines *****************************/
 //Defines generales
 #define NOMBRE_FAMILIA "Termometro_Satelite"
-#define VERSION "1.8.9 (ESP8266v2.7.4 OTA|json|MQTT|Cont. dinamicos|WebSockets)" //Actualizada version de tarjeta y corregido problema con la configuracion por defecto en el arranque
+#define VERSION "v1.8.10" // (ESP8266v3.0.1 OTA|json|MQTT|Cont. dinamicos|WebSockets)" //Actualizada version de tarjeta y corregido problema con la configuracion por defecto en el arranque
 #define SEPARADOR        '|'
 #define SUBSEPARADOR     '#'
 #define KO               -1
@@ -31,12 +31,13 @@
 #define WIFI_CONFIG_BAK_FILE       "/WiFiConfig.json.bak"
 #define MQTT_CONFIG_FILE           "/MQTTConfig.json"
 #define MQTT_CONFIG_BAK_FILE       "/MQTTConfig.json.bak"
+#define WU_CONFIG_FILE             "/WUConfig.json"
+#define WU_CONFIG_BAK_FILE         "/WUConfig.json.bak"
 
 //Defines de pines de los captadores
 #define ONE_WIRE_BUS        D7//Pin donde esta el DS18B20
 #define DHTPIN              D6//Pin de datos del DTH22
 #define LDR_PIN             A0 
-#define PIN_DESBORDE_TIEMPO D5
 
 // Una vuela de loop son ANCHO_INTERVALO segundos 
 #define MULTIPLICADOR_ANCHO_INTERVALO 5 //Multiplica el ancho del intervalo para mejorar el ahorro de energia
@@ -50,6 +51,9 @@
 #define FRECUENCIA_WIFI_WATCHDOG    100 //cada cuantas vueltas comprueba si se ha perdido la conexion WiFi
 
 //#define LED_BUILTIN                2 //GPIO del led de la placa en los ESP32   
+
+#undef WUNDERGROUND
+
 /***************************** Defines *****************************/
 
 /***************************** Includes *****************************/
@@ -147,6 +151,12 @@ void setup()
     Serial.println("Init Web ------------------------------------------------------------------------");
     inicializaWebSockets();
     parpadeaLed(4);    
+#ifdef WUNDERGROUND
+    //WUnderground
+    Serial.println("Init WUnderground ---------------------------------------------------------------");
+    inicializaWU();
+    parpadeaLed(5);    
+#endif    
     }
   else Serial.println("No se pudo conectar al WiFi");
   apagaLed();
@@ -185,6 +195,9 @@ void  loop()
   if ((vuelta % frecuenciaServidorWeb)==0) atiendeWebSocket(debugGlobal); //atiende el servidor web
   if ((vuelta % frecuenciaMQTT)==0) atiendeMQTT();
   if ((vuelta % frecuenciaEnviaDatos)==0) enviaDatos(debugGlobal);
+#ifdef WUNDERGROUND  
+  if ((vuelta % frecuenciaEnviaDatos)==0)   UploadDataToWU();
+#endif  
   if ((vuelta % frecuenciaOrdenes)==0) while(HayOrdenes(debugGlobal)) EjecutaOrdenes(debugGlobal); //Lee ordenes via serie
   if ((vuelta % frecuenciaWifiWatchdog)==0) WifiWD();
   //------------- FIN EJECUCION DE TAREAS ---------------------------------  
@@ -232,7 +245,7 @@ boolean inicializaConfiguracion(boolean debug)
     return false;
     }  
     
-  parseaConfiguracionGlobal(cad);
+  if(!parseaConfiguracionGlobal(cad))return false;
   
   //Ajusto el ancho del intervalo segun el modo de ahorro de energia  
   if(ahorroEnergia==0) anchoLoop=anchoIntervalo;
@@ -278,5 +291,7 @@ boolean parseaConfiguracionGlobal(String contenido)
     Serial.printf("Configuracion leida:\ndireccion: %i\nAhorro de energia: %i\n",direccion, ahorroEnergia);
     Serial.printf("\nContadores\nmultiplicadorAnchoIntervalo: %i\nanchoIntervalo: %i\nfrecuenciaOTA: %i\nfrecuenciaLeeSensores: %i\nfrecuenciaServidorWeb: %i\nfrecuenciaOrdenes: %i\nfrecuenciaMQTT: %i\nfrecuenciaEnviaDatos: %i\nfrecuenciaWifiWatchdog: %i\n",multiplicadorAnchoIntervalo, anchoIntervalo, frecuenciaOTA, frecuenciaLeeSensores,frecuenciaServidorWeb, frecuenciaOrdenes, frecuenciaMQTT, frecuenciaEnviaDatos, frecuenciaWifiWatchdog);
 //************************************************************************************************
+    return true;
     }
+   return false;
   } 

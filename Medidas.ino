@@ -329,6 +329,17 @@ float getTemperatura(void)  //encapsula el acceso a la temperatura
   {
   return tempC;  
   }
+/*Temperatura en farenheit*/  
+/*  (32 °C × 9 / 5) + 32 = 89,6 °F*/
+float getTemperaturaF(void)
+  {
+  return ((tempC * 9.0 / 5.0) + 32.0);  
+  }
+float getTemperaturaRocio(void) //En celsius
+  {
+  return (getTemperatura() - ((100.0 - getHumedad())/5.0));
+  }
+  
 /********************************************/
 /* Publica el valor de la humedada medida   */
 /********************************************/
