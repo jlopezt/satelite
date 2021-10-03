@@ -1,5 +1,6 @@
 {
-"id": "9", 
+"nombre": "Termometro",
+"id": "10", 
 "ahorroEnergia": 0,
 
 "multiplicadorAnchoIntervalo": 5,

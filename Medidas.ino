@@ -7,7 +7,8 @@
 
 #define MAX_INTENTOS_MEDIDA    5  //Numero de intentos maximos de leer del Dallas
 #define HDC_DIRECCION_I2C    0x40 //Direccion I2C del HDC1080
-#define BME280_DIRECCION_I2C 0x76 //Direccion I2C del HDC1080
+#define BME280_DIRECCION_I2C 0x76 //Direccion I2C del BME280
+#define BMP280_DIRECCION_I2C 0x76 //Direccion I2C del BMP280
 #define SEALEVELPRESSURE_HPA 1024 //Presion a nivel del mar
 #define BH1750_FONDO_ESCALA  3800 //Fondo de escala del sensor BH1750
 
@@ -16,7 +17,8 @@
 #define TIPO_DS18B20 "DS18B20"  //Temperatura
 #define TIPO_HDC1080 "HDC1080"  //Temperatura, Humedad
 #define TIPO_DHT22   "DHT22"    //Temperatura, Humedad
-#define TIPO_BME280  "BME280"   //Temperatura, Humedad
+#define TIPO_BME280  "BME280"   //Temperatura, Humedad y presion
+#define TIPO_BMP280  "BMP280"   //Temperatura y presion
 #define TIPO_GL5539  "GL5539"   //Luz
 #define TIPO_BH1750  "BH1750"   //Luz
 
@@ -25,6 +27,7 @@
 #include <DHT.h>
 #include <ClosedCube_HDC1080.h>
 #include <Adafruit_BME280.h>
+#include <Adafruit_BMP280.h>
 #include <Adafruit_Sensor.h>
 #include <BH1750.h>
 
@@ -33,7 +36,8 @@ DHT dht(DHTPIN, DHT22);
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature DS18B20(&oneWire);
 ClosedCube_HDC1080 hdc1080;
-Adafruit_BME280 bme280; // I2C
+Adafruit_BME280 bme280; // I2C Tº, humedad y presion
+Adafruit_BMP280 bmp280; // I2C Tº y presion
 BH1750 bh1750; //I2C direccion por defecto 0x23
 
 
@@ -57,6 +61,9 @@ void inicializaSensores(void)
   tipoSensorHumedad=TIPO_NULO;
   tipoSensorLuz=TIPO_NULO;
   tipoSensorPresion=TIPO_NULO;
+
+  Wire.begin();
+  ScannerI2C();
   
   //preconfiguracion de fabrica de las habitaciones
   //0 Salon
@@ -77,7 +84,7 @@ void inicializaSensores(void)
   nombres[7]="Bodega";  
   //8 Lavanderia
   nombres[8]="Lavanderia"; 
-  //9 Salon
+  //9 Exterior
   nombres[9]="Exterior";
   //10 Despacho
   nombres[10]="Despacho2";  
@@ -105,20 +112,30 @@ void inicializaSensores(void)
   else if(tipoSensorHumedad==TIPO_DHT22  ) dht.begin();                           //Temperatura y Humedad DHT22
   else if(tipoSensorTemperatura==TIPO_HDC1080) hdc1080.begin(HDC_DIRECCION_I2C);  //I2C Temperatura y Humedad HDC1080
   else if(tipoSensorTemperatura==TIPO_DS18B20) DS18B20.begin();                   //Temperatura Dallas DS18B20
-  else if(tipoSensorTemperatura==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Temperatura bme280
+  else if(tipoSensorTemperatura==TIPO_BME280){
+    if (!bme280.begin(BME280_DIRECCION_I2C)) Serial.println("\n\nError al inicializar BME280\n\n\n"); //Temperatura bme280
+    }
+  else if(tipoSensorTemperatura==TIPO_BMP280){
+    if (!bmp280.begin(BMP280_DIRECCION_I2C)) Serial.println("\n\nError al inicializar BMP280\n\n\n"); //Temperatura bmp280
+    }
+  
   //Humedad
   if(tipoSensorHumedad==TIPO_NULO);
   else if(tipoSensorHumedad==TIPO_HDC1080) hdc1080.begin(HDC_DIRECCION_I2C); //I2C Temperatura y Humedad HDC1080
   else if(tipoSensorHumedad==TIPO_DHT22  ) dht.begin();                      //Humedad DHT22
   else if(tipoSensorHumedad==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Humedad bme280
+
   //Luz
   //No es necesaria la inicialización
   if(tipoSensorLuz==TIPO_NULO);
   else if(tipoSensorLuz==TIPO_GL5539); //LDR, no se inicializa. Lectura analogica
   else if(tipoSensorLuz==TIPO_BH1750) bh1750.begin(BH1750::CONTINUOUS_LOW_RES_MODE ); //I2C luz bh1750
+
   //Presion
   if(tipoSensorPresion==TIPO_NULO);
   else if(tipoSensorPresion==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Humedad bme280
+  else if(tipoSensorPresion==TIPO_BMP280) bmp280.begin(BMP280_DIRECCION_I2C); //Humedad bme280
+    
   //Altitud
   //No es necesaria la inicialización, si hay es porque hay presion
   
@@ -191,6 +208,7 @@ void leeSensores(int8_t debug)
   else if(tipoSensorTemperatura==TIPO_HDC1080) leeTemperaturaHDC1080(); //I2C Temperatura HDC1080
   else if(tipoSensorTemperatura==TIPO_DS18B20) leeTemperaturaDS18B20(); //Temperatura Dallas DS18B20
   else if(tipoSensorTemperatura==TIPO_BME280 ) leeTemperaturaBME280(); //Temperatura BME280
+  else if(tipoSensorTemperatura==TIPO_BMP280 ) leeTemperaturaBMP280(); //Temperatura BMP280  
   //Humedad
   if(tipoSensorHumedad==TIPO_NULO);
   else if(tipoSensorHumedad==TIPO_HDC1080) leeHumedadHDC1080(); //I2C Temperatura y Humedad HDC1080
@@ -202,7 +220,8 @@ void leeSensores(int8_t debug)
   else if(tipoSensorLuz==TIPO_BH1750) leeLuzBH1750(); //I2C Luz BH1750
   //Presion
   if(tipoSensorPresion==TIPO_NULO);
-  else if(tipoSensorPresion==TIPO_BME280) leePresionBME280(); //I2C Temperatura y Humedad HDC1080
+  else if(tipoSensorPresion==TIPO_BME280) leePresionBME280(); //I2C Temperatura Presion y Humedad 
+  else if(tipoSensorPresion==TIPO_BMP280) leePresionBMP280(); //I2C Temperatura y Presion
 
   if(debug)Serial.printf("T: %s; H: %s, L: %s\n",getTemperaturaString().c_str(),getHumedadString().c_str(),getLuzString().c_str());
   }
@@ -253,6 +272,15 @@ void leeTemperaturaHDC1080(void)
 void leeTemperaturaBME280(void)
   { 
   tempC = bme280.readTemperature();  
+  }
+
+/**************************************/
+/* Lee el sensor de Tª BMP280         */
+/* y almnacena el valor leido         */
+/**************************************/
+void leeTemperaturaBMP280(void)
+  { 
+  tempC = bmp280.readTemperature();  
   }
 
 /**************************************/
@@ -320,6 +348,16 @@ void leePresionBME280(void)
   { 
   presion = bme280.readPressure()/100.0;
   altitud = bme280.readAltitude(SEALEVELPRESSURE_HPA);
+  }
+
+/**************************************/
+/* Lee el sensor de Presion BMP280    */
+/* y almnacena el valor leido         */
+/**************************************/
+void leePresionBMP280(void)
+  { 
+  presion = bmp280.readPressure()/100.0;
+  altitud = bmp280.readAltitude(SEALEVELPRESSURE_HPA);
   }
 
 /**************************************/
@@ -425,6 +463,8 @@ String getAltitudString(void)  //encapsula el acceso a la altitud
   return String(salida);
   }
 
+/******************************************* Fin Medidas*************************************************/
+
 /***************************************/
 /* Genera el json con las medidas      */
 /***************************************/
@@ -438,35 +478,63 @@ String generaJson(void)
   cad += "\"";
   cad += ",\"id\": ";
   cad += String(direccion);
-  cad += ",\"Temperatura\": ";
+  cad += ",\"habitacion\": ";
+  cad += "\"";
+  cad += String(nombres[direccion]);
+  cad += "\"";  
+  cad += ",\"temperatura\": ";
   cad += String(getTemperatura(),1);
-  cad += ",\"Humedad\": ";
+  cad += ",\"humedad\": ";
   cad += String(getHumedad(),1);
-  cad += ",\"Luz\": ";
+  cad += ",\"luz\": ";
   cad += String(getLuz(),1);
-  cad += ",\"Altitud\": ";
+  cad += ",\"altitud\": ";
   cad += String(getAltitud(),1);   
-  cad += ",\"Presion\": ";
+  cad += ",\"presion\": ";
   cad += String(getPresion(),1);
   cad += "}";  
 
   return cad;
   }
 
-/*******************************************************/
-/*                                                     */
-/* Genera el json con el estado delcontrolador,        */
-/* las habitaciones y las salidas                      */
-/*                                                     */
-/*******************************************************/
-String generaJsonEstado(void)
-  {
-  return generaJson();
-  } 
-  
-//////PARA DEPURACION  
+/****************************** PARA DEPURACION  ****************************************/
 void setTemp(float f) {tempC=f;}
 void setHum(float f) {humedad=f;}
 void setLuz(float f) {luz=f;}
 void setPresion(float f) {presion=f;}
 void setAltitud(float f) {altitud=f;}  
+
+void ScannerI2C(void)
+{
+  byte error, address;
+  int nDevices;
+ 
+  Serial.println("Identificando sensores...");
+ 
+  nDevices = 0;
+  for(address = 1; address < 127; address++ ) 
+  {
+ 
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+ 
+    if (error == 0)
+    {
+      Serial.print("Dispositivo I2C encontrando en la direccion 0x");
+      if (address<16) 
+        Serial.print("0");
+      Serial.print(address,HEX);
+      Serial.println("");
+ 
+      nDevices++;
+    }
+    else if (error==4) 
+    {
+      Serial.print("Error desconocido en la direccion 0x");
+      if (address<16) 
+        Serial.print("0");
+      Serial.println(address,HEX);
+    }    
+  }
+  if (nDevices == 0) Serial.printf("No se encontro ningun dispositivo I2C\n");
+}

@@ -150,7 +150,7 @@ void respondePingMQTT(char* topic, byte* payload, unsigned int length)
   Serial.printf("Recibido mensaje Ping:\ntopic: %s\npayload: %s\nlength: %i\n",topic,payload,length);
   
   //copio el payload en la cadena mensaje
-  for(int8_t i=0;i<length;i++) mensaje[i]=payload[i];
+  for(int16_t i=0;i<length;i++) mensaje[i]=payload[i];
   mensaje[length]=0;//acabo la cadena
 
   /**********************Leo el JSON***********************/
@@ -296,7 +296,7 @@ void enviaDatos(boolean debug)
 
   if(publicarEstado==1)
     {
-    payload=generaJsonEstado();//genero el json de estado
+    payload=generaJson();//genero el json de estado
     
     if(debug)Serial.println("Inicio envio de json al broker.");
     
