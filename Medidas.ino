@@ -22,6 +22,9 @@
 #define TIPO_GL5539  "GL5539"   //Luz
 #define TIPO_BH1750  "BH1750"   //Luz
 
+//Valor de dato no leido
+#define NO_LEIDO      -100.0
+
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <DHT.h>
@@ -48,11 +51,11 @@ String tipoSensorPresion;
 //String tipoSensorAltitud; //No es necesario, porque si hay es porque hay presion
 
 String nombres[MAX_SATELITES]; //nombre por defecto de los satelites
-float tempC=-100; //se declara global 
-float humedad=-1;
-float luz=-1;
-float presion=-1;
-float altitud=-1;
+float tempC=NO_LEIDO; //se declara global 
+float humedad=NO_LEIDO;
+float luz=NO_LEIDO;
+float presion=NO_LEIDO;
+float altitud=NO_LEIDO;
 
 void inicializaSensores(void)
   {
@@ -482,15 +485,15 @@ String generaJson(void)
   cad += "\"";
   cad += String(nombres[direccion]);
   cad += "\"";  
-  cad += ",\"temperatura\": ";
+  cad += ",\"Temperatura\": ";
   cad += String(getTemperatura(),1);
-  cad += ",\"humedad\": ";
+  cad += ",\"Humedad\": ";
   cad += String(getHumedad(),1);
-  cad += ",\"luz\": ";
+  cad += ",\"Luz\": ";
   cad += String(getLuz(),1);
-  cad += ",\"altitud\": ";
+  cad += ",\"Altitud\": ";
   cad += String(getAltitud(),1);   
-  cad += ",\"presion\": ";
+  cad += ",\"Presion\": ";
   cad += String(getPresion(),1);
   cad += "}";  
 

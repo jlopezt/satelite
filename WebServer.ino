@@ -570,13 +570,17 @@ void handleManageFichero(void)
       cad += "  <input type=\"hidden\" name=\"nombre\" value=\"" + nombreFichero + "\">"; 
       cad += "</form>\n"; 
  
+      cad += "<form id=\"volver\" action=\"ficheros\" target=\"_self\">"; 
+      cad += "  <input type=\"hidden\" name=\"dir\" value=\"" + directorioFichero(nombreFichero) + "\">"; 
+      cad += "</form>\n"; 
+ 
       cad += "<div id=\"contenedor\" style=\"width:900px;\">\n"; 
       cad += "  <p align=\"center\" style=\"margin-top: 0px;font-size: 16px; background-color: #83aec0; background-repeat: repeat-x; color: #FFFFFF; font-family: Trebuchet MS, Arial; text-transform: uppercase;\">Fichero: " + nombreFichero + "(" + contenido.length() + ")</p>\n"; 
       cad += "  <BR>\n"; 
       cad += "  <table width='100%'><tr>\n"; 
       cad += "  <td align='left'><button form=\"salvarFichero\" type=\"submit\" value=\"Submit\">Salvar</button></td>\n";  
       cad += "  <td align='center'><button form=\"borrarFichero\" type=\"submit\" value=\"Submit\">Borrar</button></td>\n";        
-      cad += "  <td align='right'><button form=\"salvarFichero\" type=\"submit\" value=\"Submit\">Atras</button></td>\n";  
+      cad += "  <td align='right'><button form=\"volver\" type=\"submit\" value=\"Submit\">Atras</button></td>\n";  
       cad += "  </tr></table>\n";       
       cad += "  <BR><BR>\n"; 
       cad += "  <textarea form=\"salvarFichero\" cols=120 rows=45 name=\"contenido\">" + contenido + "</textarea>\n"; 

@@ -34,20 +34,20 @@
               actualiza("habitacion",res.habitacion);
               //medidas
               //temepratura
-              console.log("Temp: "+res.temperatura);
-              actualiza("temperatura",res.temperatura + " \u00B0C");
+              console.log("Temp: "+res.Temperatura);
+              actualiza("temperatura",res.Temperatura + " \u00B0C");
               //humedad
-              console.log("humedad: "+res.humedad);
-              actualiza("humedad",res.humedad + " %");
+              console.log("humedad: "+res.Humedad);
+              actualiza("humedad",res.Humedad + " %");
               //presion
-              console.log("Presión: "+res.presion);
-              actualiza("presion",res.presion + " hPa");
+              console.log("Presión: "+res.Presion);
+              actualiza("presion",res.Presion + " hPa");
               //altitud
-              console.log("altitud: "+res.altitud);
-              actualiza("altitud",res.altitud + " m");
+              console.log("altitud: "+res.Altitud);
+              actualiza("altitud",res.Altitud + " m");
               //luz
-              console.log("luz: "+res.luz);
-              actualiza("luz",res.luz);
+              console.log("luz: "+res.Luz);
+              actualiza("luz",res.Luz);
 
               if(running) setTimeout(loadValues, reloadPeriod);
             } else running = false;
