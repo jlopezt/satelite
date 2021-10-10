@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <!--<META HTTP-EQUIV="REFRESH" CONTENT="10;URL=/datos">-->
+    <TITLE>Domoticae</TITLE>
+    <link rel="stylesheet" type="text/css" href="css.css">
+    <script>
+      const MODO_OFF=0;
+      const MODO_ON=1;
+      const MODO_AUTO=2;
+
+      var reloadPeriod = 2000;
+      var running = false;
+
+      function actualiza(id,valor){
+        var a=document.getElementById(id);
+        a.innerHTML=valor;        
+      };
+
+      function loadValues(){
+        if(!running) return;
+        var xh = new XMLHttpRequest();
+        xh.onreadystatechange = function(){
+          if (xh.readyState == 4){
+            if(xh.status == 200) {
+              console.log("JSON: " + xh.responseText);//JSON.stringify(xh));
+              var res = JSON.parse(xh.responseText);
+              //luz
+              console.log("id: "+res.id);
+              actualiza("id",res.id);
+              //luz
+              console.log("habitacion: "+res.habitacion);
+              actualiza("habitacion",res.habitacion);
+              //medidas
+              //temepratura
+              console.log("Temp: "+res.Temperatura);
+              actualiza("temperatura",res.Temperatura + " \u00B0C");
+              //humedad
+              console.log("humedad: "+res.Humedad);
+              actualiza("humedad",res.Humedad + " %");
+              //presion
+              console.log("Presión: "+res.Presion);
+              actualiza("presion",res.Presion + " hPa");
+              //altitud
+              console.log("altitud: "+res.Altitud);
+              actualiza("altitud",res.Altitud + " m");
+              //luz
+              console.log("luz: "+res.Luz);
+              actualiza("luz",res.Luz);
+
+              if(running) setTimeout(loadValues, reloadPeriod);
+            } else running = false;
+          }
+        };
+        xh.open("GET", "estado", true);
+        xh.send(null);
+      };
+
+      function run(){
+        if(!running){
+          running = true;
+          loadValues();
+        }
+      }            
+
+      function inicializa(){
+        run(); 
+      }
+    </script>
+  </HEAD>
+
+  <BODY onload="inicializa()">
+    <TABLE border="0" width="80%" cellpadding="0" cellspacing="0" width="300" class="tabla">
+      <CAPTION>Identificaci&oacute;n</CAPTION>
+      <TR class="modo2"><TD>Habitaci&oacute;n:</TD><TD id="habitacion"></TD></TR>
+      <TR class="modo2"><TD>Id:</TD><TD id="id"></TD></TR>
+    </TABLE>
+    <BR>
+    <TABLE border="0" width="80%" cellpadding="0" cellspacing="0" width="300" class="tabla">
+      <CAPTION>Valores</CAPTION>
+      <TR class="modo2"><TD>Temperatura:</TD><TD id="temperatura"></TD></TR>
+      <TR class="modo2"><TD>Humedad:</TD><TD id="humedad"></TD></TR>
+      <TR class="modo2"><TD>Presi&oacute;n:</TD><TD id="presion"></TD></TR>
+      <TR class="modo2"><TD>Altitud:</TD><TD id="altitud"></TD></TR>
+      <TR class="modo2"><TD>Luz:</TD><TD id="luz"></TD></TR>
+    </TABLE>
+  </BODY>
+</HTML>

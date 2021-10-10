@@ -77,14 +77,16 @@ void webServer(int debug)
 
 void handleMain() 
   {
-  server.sendHeader("Location", "main.html",true); //Redirect to our html web page 
-  server.send(302, "text/html","");    
+  handleFileRead("main.html");
+  //server.sendHeader("Location", "main.html",true); //Redirect to our html web page 
+  //server.send(302, "text/html","");    
   }
 
 void handleRoot() 
   {
-  server.sendHeader("Location", "root.html", true); //Redirect to our html web page */
-  server.send(302, "text/html","");    
+  handleFileRead("root.html");    
+  //server.sendHeader("Location", "root.html", true); //Redirect to our html web page */
+  //server.send(302, "text/html","");    
   }
 
 void handleNombre()
@@ -608,7 +610,7 @@ void handleFicheros(void)
   String prefix="/";   
  
   if(server.hasArg("dir")) prefix=server.arg("dir"); 
- 
+  
   server.sendHeader("Location","ficheros.html?dir=" + prefix, true);       
   server.send(302);   
   } 
