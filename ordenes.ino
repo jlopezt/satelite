@@ -447,9 +447,11 @@ void func_comando_echo(int iParametro, char* sParametro, float fParametro)//"ech
 
 void func_comando_debug(int iParametro, char* sParametro, float fParametro)//"debug")
   {
-  ++debugGlobal=debugGlobal % 2;
-  if (debugGlobal) Serial.println("debugGlobal esta on");
-  else Serial.println("debugGlobal esta off");
+  //++debugGlobal=debugGlobal % 2;
+  //if (debugGlobal>0) Serial.println("debugGlobal esta on");
+  //else Serial.println("debugGlobal esta off");
+  if (debugGlobal==0){debugGlobal=1;Serial.println("debugGlobal esta on");}
+  else {debugGlobal=0;Serial.println("debugGlobal esta off");}
   }
 
 void func_comando_getSSID(int iParametro, char* sParametro, float fParametro)//"debug")

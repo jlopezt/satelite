@@ -93,7 +93,8 @@ void handleNombre()
   DynamicJsonBuffer jsonBuffer(capacity);
   
   JsonObject& root = jsonBuffer.createObject();
-  root["nombre"] = nombre_dispositivo;
+  root["nombreFamilia"] = NOMBRE_FAMILIA;
+  root["nombreDispositivo"] = nombre_dispositivo;
   root["version"] = VERSION;
   
   String cad="";
@@ -268,15 +269,8 @@ void handleLuz()
 /*********************************************/  
 void handleRestart(void)
   {
-  String cad="";
-
-  cad += cabeceraHTMLlight;
-  cad += IDENTIFICACION;
-  
-  cad += "Reiniciando...<br>";
-  cad += pieHTMLlight;
-    
-  server.send(200, "text/html", cad);     
+  handleFileRead("restart.html");
+   
   delay(100);
   ESP.restart();
   }
@@ -723,7 +717,7 @@ bool handleFileRead(String path)
   { // send the right file to the client (if it exists)
   Serial.println("handleFileRead: " + path);
   
-  if (!path.startsWith("/")) path += "/";
+  if (!path.startsWith("/")) path = "/" + path;
   path = "/www" + path; //busco los ficheros en el SPIFFS en la carpeta www
   //if (!path.endsWith("/")) path += "/";
   

@@ -5,119 +5,6 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" type="text/css" href="css.css" media="screen" />
-    <!--
-    <style>
-      * {
-        box-sizing: border-box;
-      }
-
-      body {
-        font-family: Trebuchet MS, Arial;
-        background-color: #f0f0ce;
-        color: #000000;
-      }
-
-      /* Style the header */
-      header {
-        background-color: #444;
-        padding: 20px;
-        text-align: left;
-        font-size: 35px;
-        font: verdana;
-        font-weight: bold;
-        color: white;
-      }
-
-      /* Create two columns/boxes that floats next to each other */
-      nav {
-        float: left;
-        width: 100%;
-        background: #888; /*#F0F0CE;*/
-        padding: 0px;
-      }
-
-      /* Style the list inside the menu */
-      nav ul {
-        list-style-type: none;
-        margin: 0;
-        padding: 0;
-      }
-
-      nav ul li {
-        display: inline;
-        font-family: Arial;
-        font-size: 11px;
-        text-decoration: none;
-        float: left;
-        padding: 10px;
-        background-color: #888;
-        color: #fff;
-      }
-
-      nav ul li:hover {
-        background: #222;
-        font-weight: bold;
-        border-radius: 8px;
-      }
-
-      article {
-        float: left;
-        padding: 0px;
-        width: 100%;
-        background-color: #ddd; /*#F0F0CE;*/
-        /*height: 600px; /* only for demonstration, should be removed */
-      }
-
-      section {
-        background-color: #888;
-      }
-
-      /* Clear floats after the columns */
-      section:after {
-        content: "";
-        display: table;
-        clear: both;
-      }
-
-      /* Style the footer */
-      footer {
-        height: 40px;
-        background-color: #444;
-        padding: 10px;
-        text-align: right;
-        color: white;
-        font: verdana;
-        font-weight: bold;
-      }
-
-      .izquierda {
-        float: left;
-        padding: 0px;
-        text-align: left;
-      }
-      .derecha {
-        float: right;
-        padding: 0px;
-        text-align: right;
-      }
-
-      .oculto {
-        display: none;
-      }
-      .visible {
-        display: inline;
-      }
-
-      /* Responsive layout - makes the two columns/boxes stack on top of each other instead of next to each other, on small screens */
-      @media (max-width: 600px) {
-        nav,
-        article {
-          width: 100%;
-          height: auto;
-        }
-      }
-    </style>
-    -->
     <link href='main.css' rel='stylesheet' type='text/css'>
     <script>
       function cambiaDiv() {
@@ -133,10 +20,12 @@
         }
 
         if (document.getElementById("delante").className == "visible") {
+          cambiaIFrame("",'iframe_a');
           console.log("Delante: " + document.getElementById("delante").className + " Ocultando delante");
           document.getElementById("delante").className = "oculto";
           document.getElementById("nav").className = "oculto";
         } else {
+          cambiaIFrame("root.html",'iframe_a');
           console.log("Delante: " + document.getElementById("delante").className + " mostrando delante");
           document.getElementById("delante").className = "visible";
           document.getElementById("nav").className = "visible";          
@@ -150,13 +39,23 @@
             if(xh.status == 200) {
               console.log("JSON: " + JSON)
               var res = JSON.parse(xh.responseText);
-              //nombre
-              console.log("Nombre: "+res.nombre);
-              cambiaNombre(res.nombre);
-              //document.getElementById("nombreDispositivo").innerText=res.nombre;
+              //nombre familia
+              if (typeof res.nombreFamilia !== 'undefined'){
+                console.log("Nombre familia: "+res.nombreFamilia);
+                cambiaNombreFamilia(res.nombreFamilia);
+              }
+              //nombre dispositivo
+              if (typeof res.nombreDispositivo !== 'undefined'){
+                console.log("Nombre dispositivo: "+res.nombreDispositivo);
+                cambia("nombreDispositivo",res.nombreDispositivo);
+                //document.getElementById("nombreDispositivo").innerText=res.nombreDispositivo;
+              }
               //consigna
-              console.log("Version: "+res.version);
-              document.getElementById("version").innerText=res.version;
+              if (typeof res.version !== 'undefined'){
+                console.log("Version: "+res.version);
+                cambia("version",res.version);
+                //document.getElementById("version").innerText=res.version;
+              }
             }
           }
         };
@@ -179,7 +78,11 @@
         document.getElementById("article").style.height=alto+"px";     
       }
       
-      function cambiaNombre(nombre){
+      function cambia(elemento,valor){
+        document.getElementById(elemento).innerHTML=valor;
+      }
+
+      function cambiaNombreFamilia(nombre){
         document.getElementById("nombre_1").innerHTML=nombre.substr(0,nombre.length-3);
         document.getElementById("nombre_2").innerHTML=nombre.substr(nombre.length-3,1);
         document.getElementById("nombre_3").innerHTML=nombre.substr(nombre.length-2);
@@ -195,7 +98,7 @@
   </head>
   <body onload="inicializa();">
     <header style="overflow: auto;" id="header">
-      <div class="izquierda" id="nombreDispositivo">
+      <div class="izquierda" id="nombreFamilia">
         <span id="nombre_1"></span><span id="nombre_2" style="color:red"></span><span id="nombre_3"></span>
       </div>
       <div class="derecha" style="font-size: 20px;">
@@ -239,6 +142,8 @@
     </section>
 
     <footer id="footer">
+      <div class="izquierda" id="nombreDispositivo"></div>
+      <div class="izquierda" id="separador">&nbsp;-&nbsp;</div>
       <div class="izquierda" id="version"></div>
       <div class="derecha"><a href="https://domoticae.lopeztola.com" target="_self" style="text-decoration:none; color:white;">domoticae-2020</a></div>
     </footer>

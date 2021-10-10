@@ -241,9 +241,11 @@ void leeTemperaturaDS18B20(void)
     {
     DS18B20.requestTemperatures(); 
     tempC = DS18B20.getTempCByIndex(0);
-    if(tempC != 85.0 && tempC != (-127.0)) break;
+    if(tempC != 85.0 && tempC != (-127.0)) return;
     delay(100);
     } while (i++<MAX_INTENTOS_MEDIDA);
+    
+  tempC=NO_LEIDO;
   }
 
 
@@ -255,8 +257,8 @@ void leeTemperaturaDHT22(void)
   {
   float t;
   
-  t = dht.readTemperature();  //leo el sensor
-  if(!isnan(t)) tempC=t;  //si no es nan lo guardo
+  tempC = dht.readTemperature();  //leo el sensor
+  if(isnan(tempC)) tempC=NO_LEIDO;
   }
   
 /**************************************/
@@ -265,7 +267,9 @@ void leeTemperaturaDHT22(void)
 /**************************************/
 void leeTemperaturaHDC1080(void)
   { 
+  delay(20);
   tempC = hdc1080.readTemperature();  
+  if(tempC==125) tempC=NO_LEIDO;
   }
   
 /**************************************/
@@ -275,6 +279,7 @@ void leeTemperaturaHDC1080(void)
 void leeTemperaturaBME280(void)
   { 
   tempC = bme280.readTemperature();  
+  if(!isnan(tempC)) tempC=NO_LEIDO;
   }
 
 /**************************************/
@@ -284,6 +289,7 @@ void leeTemperaturaBME280(void)
 void leeTemperaturaBMP280(void)
   { 
   tempC = bmp280.readTemperature();  
+  if(!isnan(tempC)) tempC=NO_LEIDO;
   }
 
 /**************************************/
