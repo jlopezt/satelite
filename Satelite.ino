@@ -10,8 +10,8 @@
 
 /***************************** Defines *****************************/
 //Defines generales
-#define NOMBRE_FAMILIA "Termometro"
-#define VERSION "v1.9.4" // (ESP8266v3.0.2 OTA|json|MQTT|Cont. dinamicos|WebSockets)" //Actualizada version de tarjeta y corregido problema con la configuracion por defecto en el arranque
+#define NOMBRE_FAMILIA "Termostatix"
+#define VERSION "v1.10.0" // (ESP8266v3.0.2 OTA|json|MQTT|Cont. dinamicos|WebSockets)" //Actualizada version de tarjeta y corregido problema con la configuracion por defecto en el arranque
 #define SEPARADOR        '|'
 #define SUBSEPARADOR     '#'
 #define KO               -1

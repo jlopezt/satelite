@@ -1,15 +1,3 @@
-/************************************************************************************************
-Servicio                                    URL                            Formato entrada Formato salida                       Comentario                                                                                       Ejemplo peticion                    Ejemplo respuesta
-Servicio de informacion                     http://IPSatelite              N/A             N/A                                  Nombre del modulo y version                                                  
-Servicio de consulta de valores temperatura http://IPSatelite/temperatura  id=<id>         <temperatura>,<id2>                  Devuelve la temperatura y el id_2 en funcion del id de entrada (por seguridad)                   http://IPSatelite/temperatura?id=59 23.5|43682
-Servicio de consulta de valores humedad     http://IPSatelite/humedad      id=<id>         <humedad>,<id2>                      Devuelve la temperatura y el id_2 en funcion del id de entrada (por seguridad)                   http://IPSatelite/humedad?id=59     46.2|43682
-Servicio de consulta de valores luz         http://IPSatelite/luz          id=<id>         <luz>,<id2>                          Devuelve la temperatura y el id_2 en funcion del id de entrada (por seguridad)                   http://IPSatelite/luz?id=59         97.3|43682
-Servicio de consulta de valores medidos     http://IPSatelite/medidas      id=<id>         <temperatura>|<humedad>|<luz>|<id2>  Devuelve la temperatura y el id_2 en funcion del id de entrada (por seguridad)                   http://IPSatelite/medidas?id=59     23.5|46.2|97.3|43682
-Web de valores medidos                      http://IPSatelite/web          N/A             HTML                                 Devuelve una pagina web para la consulta desde navegador                                         http://IPSatelite/web  
-Servicio de test                            http://IPSatelite/test         N/A             HTML                                 Devuelve un texto html para verificar conectividad desde navegador                               http://IPSatelite/test 
-************************************************************************************************/
-//enum HTTPMethod { HTTP_ANY, HTTP_GET, HTTP_POST, HTTP_PUT, HTTP_PATCH, HTTP_DELETE, HTTP_OPTIONS };
-//#define MODULO "Modulo " + String(direccion) + " Habitacion= " + nombres[direccion] + "<BR>"
 #define IDENTIFICACION "Version " + String(VERSION) + "." + "<BR>"
 
 #include <ESP8266WebServer.h>
@@ -17,12 +5,6 @@ Servicio de test                            http://IPSatelite/test         N/A  
 #include <FS.h>
 
 ESP8266WebServer server(PUERTO_WEBSERVER);
-
-/*
-String cabeceraHTML="<!DOCTYPE html><HTML><HEAD><TITLE>" + nombre_dispositivo + " </TITLE></HEAD><BODY><h1><a href=\"../\" target=\"_self\">" + nombre_dispositivo + "</a><br></h1>";
-String enlaces="<TABLE>\n<CAPTION>Enlaces</CAPTION>\n<TR><TD><a href=\"info\" target=\"_self\">Info</a></TD></TR>\n<TR><TD><a href=\"test\" target=\"_self\">Test</a></TD></TR>\n<TR><TD><a href=\"restart\" target=\"_self\">Restart</a></TD></TR>\n<TR><TD><a href=\"listaFicheros\" target=\"_self\">Lista ficheros</a></TD></TR>\n</TABLE>"; 
-String pieHTML="</BODY></HTML>";
-*/
 
 const String cabeceraHTMLlight = "<!DOCTYPE html>\n<head>\n<meta charset=\"UTF-8\" />\n<TITLE>Domoticae</TITLE><link rel=\"stylesheet\" type=\"text/css\" href=\"css.css\"></HEAD><html lang=\"es\">\n<BODY>\n"; 
 const String pieHTMLlight="</body>\n</HTML>\n";
@@ -54,7 +36,7 @@ void inicializaWebServer(void)
 
  //Uploader
   server.on("/upload", HTTP_GET, []() {
-    if (!handleFileRead("/upload.html")) {
+    if (!handleFileReadChunked("/upload.html")) {
       server.send(404, "text/plain", "FileNotFound");
     }
   });
@@ -75,19 +57,12 @@ void webServer(int debug)
   server.handleClient();
   }
 
-void handleMain() 
-  {
-  handleFileRead("main.html");
-  //server.sendHeader("Location", "main.html",true); //Redirect to our html web page 
-  //server.send(302, "text/html","");    
-  }
+/********************************************************/
+/*  Servicios comunes para actualizar y cargar la web   */
+/********************************************************/    
+void handleMain(){handleFileReadChunked("main.html");}
 
-void handleRoot() 
-  {
-  handleFileRead("root.html");    
-  //server.sendHeader("Location", "root.html", true); //Redirect to our html web page */
-  //server.send(302, "text/html","");    
-  }
+void handleRoot(){handleFileReadChunked("root.html");}
 
 void handleNombre()
   {
@@ -104,14 +79,7 @@ void handleNombre()
   server.send(200,"text/json",cad);
   }
   
-/*********************************************/
-/*                                           */
-/*  Estado                                   */
-/*  Servicio de consulta de valores medidos  */
-/*  Devuelve un formato json                 */
-/*                                           */
-/*********************************************/
-void handleEstado() 
+void handleEstado(void) 
   {
   String cad=generaJson();
   
@@ -271,9 +239,8 @@ void handleLuz()
 /*********************************************/  
 void handleRestart(void)
   {
-  handleFileRead("restart.html");
-   
-  delay(100);
+  handleFileReadChunked("restart.html");
+  delay(1000);
   ESP.restart();
   }
 
@@ -334,9 +301,6 @@ void handleInfo(void)
   cad += "frecuenciaOTA: ";
   cad += String(frecuenciaOTA);
   cad += "<BR>";   
-  cad += "frecuenciaLeeSensores: ";
-  cad += String(frecuenciaLeeSensores);
-  cad += "<BR>";   
   cad += "frecuenciaServidorWeb: ";
   cad += String(frecuenciaServidorWeb);
   cad += "<BR>";   
@@ -346,6 +310,9 @@ void handleInfo(void)
   cad += "frecuenciaMQTT: ";
   cad += String(frecuenciaMQTT);
   cad += "<BR>";
+  cad += "frecuenciaLeeSensores: ";
+  cad += String(frecuenciaLeeSensores);
+  cad += "<BR>";   
   cad += "frecuenciaWifiWatchdog: ";
   cad += String(frecuenciaWifiWatchdog); 
   cad += "<BR>";  
@@ -543,53 +510,86 @@ void handleLeeFichero(void)
 /*  peticion HTTP                            */  
 /*                                           */ 
 /*********************************************/  
-void handleManageFichero(void) 
-  { 
-  String nombreFichero=""; 
-  String contenido=""; 
-  String cad=cabeceraHTMLlight; 
-    
-  if(server.hasArg("nombre") ) //si existen esos argumentos 
-    { 
-    nombreFichero=server.arg("nombre"); 
- 
-    if(leeFichero(nombreFichero, contenido)) 
-      {            
-      //cad += "<link rel='stylesheet' type='text/css' href='css.css'>"; 
-      //cad += "<style> table{border-collapse: collapse;} th, td{border: 1px solid black; padding: 5px; text-align: left;}</style>"; 
- 
-      cad += "<form id=\"borrarFichero\" action=\"/borraFichero\">\n"; 
-      cad += "  <input type=\"hidden\" name=\"nombre\" value=\"" + nombreFichero + "\">\n"; 
-      cad += "</form>\n"; 
- 
-      cad += "<form id=\"salvarFichero\" action=\"creaFichero\" target=\"_self\">"; 
-      cad += "  <input type=\"hidden\" name=\"nombre\" value=\"" + nombreFichero + "\">"; 
-      cad += "</form>\n"; 
- 
-      cad += "<form id=\"volver\" action=\"ficheros\" target=\"_self\">"; 
-      cad += "  <input type=\"hidden\" name=\"dir\" value=\"" + directorioFichero(nombreFichero) + "\">"; 
-      cad += "</form>\n"; 
- 
-      cad += "<div id=\"contenedor\" style=\"width:900px;\">\n"; 
-      cad += "  <p align=\"center\" style=\"margin-top: 0px;font-size: 16px; background-color: #83aec0; background-repeat: repeat-x; color: #FFFFFF; font-family: Trebuchet MS, Arial; text-transform: uppercase;\">Fichero: " + nombreFichero + "(" + contenido.length() + ")</p>\n"; 
-      cad += "  <BR>\n"; 
-      cad += "  <table width='100%'><tr>\n"; 
-      cad += "  <td align='left'><button form=\"salvarFichero\" type=\"submit\" value=\"Submit\">Salvar</button></td>\n";  
-      cad += "  <td align='center'><button form=\"borrarFichero\" type=\"submit\" value=\"Submit\">Borrar</button></td>\n";        
-      cad += "  <td align='right'><button form=\"volver\" type=\"submit\" value=\"Submit\">Atras</button></td>\n";  
-      cad += "  </tr></table>\n";       
-      cad += "  <BR><BR>\n"; 
-      cad += "  <textarea form=\"salvarFichero\" cols=120 rows=45 name=\"contenido\">" + contenido + "</textarea>\n"; 
-      cad += "</div>\n"; 
-      } 
-    else cad += "Error al abrir el fichero " + nombreFichero + "<BR>"; 
-    } 
-  else cad += "Falta el argumento <nombre de fichero>";  
- 
-  cad += pieHTMLlight; 
-  server.send(200, "text/html", cad);  
-  } 
- 
+void handleManageFichero(void)
+  {
+  String nombreFichero="";
+  String contenido="";
+  String cad=cabeceraHTMLlight;
+
+  if(server.hasArg("nombre") ) //si existen esos argumentos
+    {
+    nombreFichero=server.arg("nombre");
+          
+    if (!server.chunkedResponseModeStart(200, "text/html")) {
+      server.send(505, F("text/html"), F("HTTP1.1 required"));
+      return;
+      }     
+
+    cad += "<form id=\"borrarFichero\" action=\"/borraFichero\">\n";
+    cad += "  <input type=\"hidden\" name=\"nombre\" value=\"" + nombreFichero + "\">\n";
+    cad += "</form>\n";
+
+    cad += "<form id=\"salvarFichero\" action=\"creaFichero\" target=\"_self\">\n";
+    cad += "  <input type=\"hidden\" name=\"nombre\" value=\"" + nombreFichero + "\">\n";
+    cad += "</form>\n";
+
+    cad += "<form id=\"volver\" action=\"ficheros\" target=\"_self\">\n";
+    cad += "  <input type=\"hidden\" name=\"dir\" value=\"" + directorioFichero(nombreFichero) + "\">\n";
+    cad += "</form>\n";  
+
+    cad += "<div id=\"contenedor\" style=\"width:900px;\">\n";
+    cad += "  <p align=\"center\" style=\"margin-top: 0px;font-size: 16px; background-color: #83aec0; background-repeat: repeat-x; color: #FFFFFF; font-family: Trebuchet MS, Arial; text-transform: uppercase;\">Fichero: " + nombreFichero + "(" + contenido.length() + ")</p>\n";
+    cad += "  <BR>\n";
+    cad += "  <table width='100%'><tr>\n"; 
+    cad += "  <td align='left'><button form=\"salvarFichero\" type=\"submit\" value=\"Submit\">Salvar</button></td>\n";  
+    cad += "  <td align='center'><button form=\"borrarFichero\" type=\"submit\" value=\"Submit\">Borrar</button></td>\n";        
+    cad += "  <td align='right'><button form=\"volver\" type=\"submit\" value=\"Submit\">Atras</button></td>\n";  
+    cad += "  </tr></table>\n";       
+    cad += "  <BR><BR>\n";
+    cad += "  <textarea form=\"salvarFichero\" cols=120 rows=45 name=\"contenido\">\n";
+    server.sendContent(cad);
+
+    if (SPIFFS.exists(nombreFichero))
+      {
+      const uint16_t buffSize=1000;  
+      File file = SPIFFS.open(nombreFichero, "r");    
+      Serial.printf("El fichero %s existe\n",nombreFichero.c_str());
+
+      char *buff=(char *)malloc(buffSize);      
+      if(buff==NULL){
+          Serial.printf("Error en chunk\n"); 
+          server.sendContent(String("Error al reservar memoria"));
+          }
+      else{
+        Serial.printf("Iniciando While...\n");
+        uint16_t tamano=file.size();
+        uint16_t leido=0;
+        while(leido<tamano){
+          uint16_t tam=tamano-leido;
+          if(tam>buffSize) tam=buffSize;
+          leido+=file.readBytes(buff,tam);
+          server.sendContent(buff,tam);   
+          Serial.printf("tamaño: %i | leido: %i | tam: %i\n",tamano,leido, tam);   
+          }          
+        free(buff);
+        }
+      file.close();
+      }
+    else server.sendContent(String("Error al abrir el fichero " + nombreFichero));
+
+    cad  = "\n</textarea>\n";
+    cad += "</div>\n";
+    cad += pieHTMLlight;
+    server.sendContent(cad);
+    server.chunkedResponseFinalize();
+    return;
+    }
+  else cad += "Falta el argumento <nombre de fichero>"; 
+
+  cad += pieHTMLlight;
+  server.send(200, "text/html", cad);
+  }
+
 /*********************************************/ 
 /*                                           */ 
 /*  Lista los ficheros en el sistema a       */ 
@@ -614,7 +614,6 @@ void handleFicheros(void)
   server.sendHeader("Location","ficheros.html?dir=" + prefix, true);       
   server.send(302);   
   } 
-     
 /**********************************************************************/
 
 /*********************************************/
@@ -675,7 +674,7 @@ void handleInfoFS(void)
 /*********************************************/
 void handleNotFound()
   {
-  if(handleFileRead(server.uri()))return;
+  if(handleFileReadChunked(server.uri()))return;
     
   String message = "";//"<h1>" + String(NOMBRE_FAMILIA) + "<br></h1>";
 
@@ -739,7 +738,54 @@ bool handleFileRead(String path)
   return false;
   }
 
- void handleFileUpload()
+bool handleFileReadChunked(String path) 
+  { // send the right file to the client (if it exists)
+  const uint16_t buffSize=1000;
+  Serial.println("handleFileReadChunked: " + path);
+  
+  if (!path.startsWith("/")) path = "/" + path;
+  path = "/www" + path; //busco los ficheros en el SPIFFS en la carpeta www
+  //if (!path.endsWith("/")) path += "/";
+  
+  String contentType = getContentType(path);             // Get the MIME type
+  String pathWithGz = path + ".gz";
+  if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)) 
+    { // If the file exists, either as a compressed archive, or normal
+    if (SPIFFS.exists(pathWithGz))                         // If there's a compressed version available
+      path += ".gz";                                         // Use the compressed verion
+    File file = SPIFFS.open(path, "r");                    // Open the file
+
+    //Inicio el chunked************************
+    //size_t sent = server.streamFile(file, contentType);    // Send it to the client
+    uint16_t tamano=file.size();
+    uint16_t leido=0;
+    char *buff=(char *)malloc(buffSize);
+    
+    if(buff==NULL){printf("Error en chunk\n"); return false;}
+    if (!server.chunkedResponseModeStart(200, contentType)) {
+      server.send(505, F("text/html"), F("HTTP1.1 required"));
+      return false;
+    }    
+    
+    while(leido<tamano){
+      uint16_t tam=tamano-leido;
+      if(tam>buffSize) tam=buffSize;
+      leido+=file.readBytes(buff,tam);
+      server.sendContent(buff,tam);   
+      Serial.printf("tamaño: %i | leido: %i | tam: %i\n",tamano,leido, tam);   
+    }
+    server.chunkedResponseFinalize();
+    free(buff);
+    //Fin del chunked*************************
+    file.close();                                          // Close the file again
+    Serial.println(String("\tSent file: ") + path);
+    return true;
+    }
+  Serial.println(String("\tFile Not Found: ") + path);   // If the file doesn't exist, return false
+  return false;
+  }
+
+void handleFileUpload()
   {
   String path = "";
   static File fsUploadFile;
