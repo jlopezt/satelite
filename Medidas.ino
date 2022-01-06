@@ -226,7 +226,7 @@ void leeSensores(int8_t debug)
   else if(tipoSensorPresion==TIPO_BME280) leePresionBME280(); //I2C Temperatura Presion y Humedad 
   else if(tipoSensorPresion==TIPO_BMP280) leePresionBMP280(); //I2C Temperatura y Presion
 
-  if(debug)Serial.printf("T: %s; H: %s, L: %s\n",getTemperaturaString().c_str(),getHumedadString().c_str(),getLuzString().c_str());
+  if(debug)Serial.printf("T: %s; H: %s, L: %s, P: %s, A: %s\n",getTemperaturaString().c_str(),getHumedadString().c_str(),getLuzString().c_str(),getPresionString().c_str(),getAltitudString().c_str());
   }
 
 /**************************************/
@@ -467,7 +467,7 @@ String getPresionString(void)  //encapsula el acceso a la presion
 String getAltitudString(void)  //encapsula el acceso a la altitud
   {
   char salida[7];//"-999.9
-  dtostrf(presion, 2, 1, salida);  
+  dtostrf(altitud, 2, 1, salida);  
 
   return String(salida);
   }
