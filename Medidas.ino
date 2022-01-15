@@ -356,7 +356,8 @@ void leeLuzBH1750(void)
 void leePresionBME280(void)
   { 
   presion = bme280.readPressure()/100.0;
-  altitud = bme280.readAltitude(SEALEVELPRESSURE_HPA);
+  if(presion>0) altitud = bme280.readAltitude(SEALEVELPRESSURE_HPA);
+  else altitud=-1;
   }
 
 /**************************************/
@@ -366,7 +367,8 @@ void leePresionBME280(void)
 void leePresionBMP280(void)
   { 
   presion = bmp280.readPressure()/100.0;
-  altitud = bmp280.readAltitude(SEALEVELPRESSURE_HPA);
+  if(presion>0) altitud = bmp280.readAltitude(SEALEVELPRESSURE_HPA);
+  else altitud=-1;
   }
 
 /**************************************/
@@ -423,8 +425,9 @@ float getAltitud(void)  //encapsula el acceso a la altitud
 /**************************************/
 String getTemperaturaString(void)  //encapsula el acceso a la temperatura
   {
-  char salida[7];//"-999.9
-  dtostrf(tempC, 2, 1, salida);  
+  const uint8_t anchoSalida=7;  
+  char salida[anchoSalida];//"-999.9
+  dtostrf(tempC, anchoSalida-1, 1, salida);  
 
   return String(salida);
   }
@@ -434,8 +437,9 @@ String getTemperaturaString(void)  //encapsula el acceso a la temperatura
 /********************************************/
 String getHumedadString(void)  //encapsula el acceso a la humedad
   {
-  char salida[7];//"-999.9
-  dtostrf(humedad, 2, 1, salida);  
+  const uint8_t anchoSalida=7;  
+  char salida[anchoSalida];//"-999.9
+  dtostrf(humedad, anchoSalida-1, 1, salida);  
 
   return String(salida);
   }
@@ -444,8 +448,9 @@ String getHumedadString(void)  //encapsula el acceso a la humedad
 /**************************************/
 String getLuzString(void)  //encapsula el acceso a la luz
   {
-  char salida[7];//"-999.9
-  dtostrf(luz, 2, 1, salida);  
+  const uint8_t anchoSalida=7;
+  char salida[anchoSalida];//"-999.9
+  dtostrf(luz, anchoSalida-1, 1, salida);  
 
   return String(salida);
   }
@@ -455,8 +460,9 @@ String getLuzString(void)  //encapsula el acceso a la luz
 /******************************************/
 String getPresionString(void)  //encapsula el acceso a la presion
   {
-  char salida[7];//"-999.9
-  dtostrf(presion, 2, 1, salida);  
+  const uint8_t anchoSalida=7;  
+  char salida[anchoSalida];//"-999.9
+  dtostrf(presion, anchoSalida-1, 1, salida);  
 
   return String(salida);
   }
@@ -466,8 +472,9 @@ String getPresionString(void)  //encapsula el acceso a la presion
 /******************************************/
 String getAltitudString(void)  //encapsula el acceso a la altitud
   {
-  char salida[7];//"-999.9
-  dtostrf(altitud, 2, 1, salida);  
+  const uint8_t anchoSalida=7;  
+  char salida[anchoSalida];//"-999.9
+  dtostrf(altitud, anchoSalida-1, 1, salida);  
 
   return String(salida);
   }
