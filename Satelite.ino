@@ -35,9 +35,10 @@
 #define WU_CONFIG_BAK_FILE         "/WUConfig.json.bak"
 
 //Defines de pines de los captadores
-#define ONE_WIRE_BUS        D7//Pin donde esta el DS18B20
-#define DHTPIN              D6//Pin de datos del DTH22
-#define LDR_PIN             A0 
+#define ONE_WIRE_BUS             D7//Pin donde esta el DS18B20
+#define DHTPIN                   D6//Pin de datos del DTH22
+#define PIN_SENSOR_HUMEDAD_SUELO D8//Pin del sensor de humedad del suelo
+#define LDR_PIN                  A0//Pin de la LDR para medir luz
 
 // Una vuela de loop son ANCHO_INTERVALO segundos 
 #define MULTIPLICADOR_ANCHO_INTERVALO 5 //Multiplica el ancho del intervalo para mejorar el ahorro de energia
