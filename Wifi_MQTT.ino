@@ -239,6 +239,8 @@ boolean conectaMQTT(void)
     if(intentos++>=2) return (false);
     delay(timeReconnectMQTT);      
     }
+    
+  return(false);
   }
 
 /********************************************/
@@ -271,7 +273,8 @@ boolean enviarMQTT(String topic, String payload)
       return(clienteMQTT.endPublish()); //int endPublish();
       }
     }
-  else return (false);
+  
+  return(false);
   }
 
 /********************************************/

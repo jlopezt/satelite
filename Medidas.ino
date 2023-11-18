@@ -13,6 +13,7 @@
 #define BH1750_FONDO_ESCALA  3800 //Fondo de escala del sensor BH1750
 #define SECO                  250 //Lectura del sensor en vacio
 #define MOJADO                750 //Lectura del sensor en vaso de agua
+#define NUM_MEDIDAS            10 //Numero de medidas a promediar
 
 //Tipos de sensores
 #define TIPO_NULO    "NULO"
@@ -57,6 +58,8 @@ String tipoSensorHumedadSuelo;
 
 String nombres[MAX_SATELITES]; //nombre por defecto de los satelites
 float tempC=NO_LEIDO; //se declara global 
+float tempProm[NUM_MEDIDAS];
+int8_t indiceMedida;
 float humedad=NO_LEIDO;
 float luz=NO_LEIDO;
 float presion=NO_LEIDO;
@@ -73,6 +76,11 @@ void inicializaSensores(void)
   tipoSensorPresion=TIPO_NULO;
   tipoSensorTemperaturaSuelo=TIPO_NULO;
   tipoSensorHumedadSuelo=TIPO_NULO;
+
+  //Lo inicializo a NO_LEIDO y el indice a -1. En la primera lectira lo 
+  //identifica (indiceMedida=-1) y carga en todas las medidas la medida inicial
+  for(uint8_t i=0;i<NUM_MEDIDAS;i++)tempProm[i]=NO_LEIDO;
+  indiceMedida=-1;
 
   Wire.begin();
   ScannerI2C();
@@ -234,7 +242,16 @@ void leeSensores(int8_t debug)
   else if(tipoSensorTemperatura==TIPO_HDC1080) leeTemperaturaHDC1080(); //I2C Temperatura HDC1080
   else if(tipoSensorTemperatura==TIPO_DS18B20) leeTemperaturaDS18B20(); //Temperatura Dallas DS18B20
   else if(tipoSensorTemperatura==TIPO_BME280 ) leeTemperaturaBME280(); //Temperatura BME280
-  else if(tipoSensorTemperatura==TIPO_BMP280 ) leeTemperaturaBMP280(); //Temperatura BMP280  
+  else if(tipoSensorTemperatura==TIPO_BMP280 ) leeTemperaturaBMP280(); //Temperatura BMP280
+  if(tempC!=NO_LEIDO){
+    if(indiceMedida==-1){
+      for(indiceMedida=0;indiceMedida<NUM_MEDIDAS;indiceMedida++) tempProm[indiceMedida]=tempC;//Si es la primera despues d earrancar, todas a tempC;
+      indiceMedida=0;
+    }
+    tempProm[indiceMedida++]=tempC;
+    indiceMedida=indiceMedida % NUM_MEDIDAS;
+    }
+    
   //Humedad
   if(tipoSensorHumedad==TIPO_NULO);
   else if(tipoSensorHumedad==TIPO_HDC1080) leeHumedadHDC1080(); //I2C Temperatura y Humedad HDC1080
@@ -471,7 +488,10 @@ void leeHumedadSueloCapacitivo(void)
 /**************************************/
 float getTemperatura(void)  //encapsula el acceso a la temperatura
   {
-  return tempC;  
+  //return tempC;  
+  float tempMedia;
+  for(uint8_t i=0;i<NUM_MEDIDAS;i++) tempMedia+=tempProm[i];
+  return tempMedia/NUM_MEDIDAS;
   }
 /*Temperatura en farenheit*/  
 /*  (32 °C × 9 / 5) + 32 = 89,6 °F*/

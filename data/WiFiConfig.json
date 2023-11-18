@@ -1,6 +1,6 @@
 {
-	"mDNS":"Bohardilla",
-	"wifiIP_PrimerSatelite":"10.68.1.62",
+	"mDNS":"SalonPre",
+	"wifiIP_PrimerSatelite":"10.68.0.62",
 	"wifiGW":"10.68.1.1",
 	"wifiNet":"255.255.0.0",
 	"wifiDNS1":"8.8.8.8",

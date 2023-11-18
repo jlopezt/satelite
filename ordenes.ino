@@ -229,7 +229,7 @@ void inicializaOrden(void)
     comandos[i++].p_func_comando=func_comando_vacio;  
     }
 
-  func_comando_help(0,"",0.0);
+  func_comando_help(0,(char *)"",0.0);
   //for(int8_t i=0;i<MAX_COMANDOS;i++) if (comandos[i].comando!=String("vacio")) Serial.printf("Comando %i: [%s]\n",i, comandos[i].comando.c_str());
   }
 
