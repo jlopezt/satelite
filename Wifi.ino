@@ -133,6 +133,8 @@ boolean parseaConfiguracionWifi(String contenido)
     
     Serial.printf("Configuracion leida:\nmDNS: %s\nIP sateite: %s\nIP Gateway: %s\nIPSubred: %s\nIP DNS1: %s\nIP DNS2: %s\n",mDNS.c_str(),wifiIP.toString().c_str(),wifiGW.toString().c_str(),wifiNet.toString().c_str(),wifiDNS1.toString().c_str(),wifiDNS2.toString().c_str());    
 
+    WiFi.hostname(("Term_"+nombre_dispositivo).c_str());
+
     if (!json.containsKey("wifi")) return false;
 
     JsonArray& wifi = json["wifi"];

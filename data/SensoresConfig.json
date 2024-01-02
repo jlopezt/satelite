@@ -1,14 +1,16 @@
 {
-"xtipoSensorTemperatura": "DS18B20", 
-"tipoSensorTemperatura": "HDC1080", 
-"xxtipoSensorTemperatura": "BMP280", 
-
-"xtipoSensorHumedad": "DHT22",
-"tipoSensorHumedad": "HDC1080",
-"xxxtipoSensorHumedad": "BME280",
-
-"tipoSensorPresion" : "BMP280",
-
-"xtipoSensorLuz": "GL5539",
-"tipoSensorLuz": "BH1750"
+    "xtipoSensorTemperatura": "DS18B20", 
+    "tipoSensorTemperatura": "HDC1080", 
+    "xxtipoSensorTemperatura": "BMP280", 
+    
+    "xtipoSensorHumedad": "DHT22",
+    "tipoSensorHumedad": "HDC1080",
+    "xxxtipoSensorHumedad": "BME280",
+    
+    "tipoSensorPresion" : "BMP280",
+    
+    "xtipoSensorLuz": "GL5539",
+    "tipoSensorLuz": "BH1750"
 }
+    
+    

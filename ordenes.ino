@@ -293,6 +293,7 @@ void func_comando_info(int iParametro, char* sParametro, float fParametro)//"inf
   Serial.printf("FlashChipSpeed: %i\n",ESP.getFlashChipSpeed());
       //FlashMode_t ESP.getFlashChipMode());
   Serial.printf("FlashChipSizeByChipId: %i\n",ESP.getFlashChipSizeByChipId());  
+  Serial.printf("MAC: %i\n",WiFi.macAddress());
   Serial.printf("-----------------------------------------------\n");
 
   Serial.printf("\n-----------------Config info-----------------\n");

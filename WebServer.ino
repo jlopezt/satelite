@@ -325,6 +325,11 @@ void handleInfo(void)
   cad += "<BR>";    
   cad += "Potencia: " + String(WiFi.RSSI());
   cad += "<BR>";    
+  cad += "Nombre en WiFi: " + String(WiFi.hostname());
+  cad += "<BR>";      
+  cad += "MAC: " + String(WiFi.macAddress());
+  cad += "<BR>";      
+  //WiFi.printDiag(Serial);
   cad += "-----------------------------------------------<BR>";  
 /*
   cad += "<BR>-----------------MQTT info-----------------<BR>";
@@ -569,7 +574,7 @@ void handleManageFichero(void)
           if(tam>buffSize) tam=buffSize;
           leido+=file.readBytes(buff,tam);
           server.sendContent(buff,tam);   
-          Serial.printf("tamaño: %i | leido: %i | tam: %i\n",tamano,leido, tam);   
+          //Serial.printf("tamaño: %i | leido: %i | tam: %i\n",tamano,leido, tam);   
           }          
         free(buff);
         }
@@ -772,7 +777,7 @@ bool handleFileReadChunked(String path)
       if(tam>buffSize) tam=buffSize;
       leido+=file.readBytes(buff,tam);
       server.sendContent(buff,tam);   
-      Serial.printf("tamaño: %i | leido: %i | tam: %i\n",tamano,leido, tam);   
+      //Serial.printf("tamaño: %i | leido: %i | tam: %i\n",tamano,leido, tam);   
     }
     server.chunkedResponseFinalize();
     free(buff);
